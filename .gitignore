@@ -11,6 +11,15 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+.env.development
+.env.production.generated
+backend/.env*
+!backend/.env.example
+!backend/.env.production.example
+*.key
+*.pem
+*.crt
 
 # Build outputs
 dist/

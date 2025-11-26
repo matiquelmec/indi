@@ -113,7 +113,7 @@ function loadMockAnalytics() {
 }
 
 // Dashboard overview
-app.get('/api/analytics/dashboard/overview', (req, res) => {
+app.get('/api/analytics/dashboard/overview', (req, res): any => {
   const mockData = loadMockAnalytics();
   
   if (!mockData) {
@@ -146,7 +146,7 @@ app.get('/api/analytics/dashboard/overview', (req, res) => {
 });
 
 // Detailed card analytics
-app.get('/api/analytics/cards/:cardId/detailed', (req, res) => {
+app.get('/api/analytics/cards/:cardId/detailed', (req, res): any => {
   const { cardId } = req.params;
   const mockData = loadMockAnalytics();
 
@@ -178,7 +178,7 @@ app.get('/api/analytics/cards/:cardId/detailed', (req, res) => {
 });
 
 // Real-time metrics
-app.get('/api/analytics/realtime/:cardId', (req, res) => {
+app.get('/api/analytics/realtime/:cardId', (req, res): any => {
   const { cardId } = req.params;
   const mockData = loadMockAnalytics();
 
