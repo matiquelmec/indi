@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/server-simple.ts",
-    "build": "echo 'No build step needed for Vercel'",
+    "build": "echo 'Serverless function - no build needed'",
     "start": "node dist/server.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",

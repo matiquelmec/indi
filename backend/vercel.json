@@ -1,6 +1,11 @@
 {
   "version": 2,
   "name": "indi-backend",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
