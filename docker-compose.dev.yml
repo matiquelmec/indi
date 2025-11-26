@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database local para desarrollo
+  postgres:
+    image: postgres:15-alpine
+    container_name: indi_postgres_local
+    environment:
+      POSTGRES_DB: indi_db
+      POSTGRES_USER: indi_user
+      POSTGRES_PASSWORD: indi_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - indi_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indi_user -d indi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: indi_redis_local
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - indi_network
+
+  # pgAdmin para administrar la BD
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: indi_pgadmin_local
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@indi.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - indi_network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  indi_network:
+    driver: bridge

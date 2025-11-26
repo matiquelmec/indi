@@ -1,0 +1,798 @@
+{
+  "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+  "cardTitle": "Dra. Elena Castillo - Psicóloga Clínica",
+  "weeklyViews": [
+    {
+      "date": "2025-11-20",
+      "views": 21,
+      "uniqueVisitors": 16,
+      "contactSaves": 1
+    },
+    {
+      "date": "2025-11-21",
+      "views": 17,
+      "uniqueVisitors": 13,
+      "contactSaves": 1
+    },
+    {
+      "date": "2025-11-22",
+      "views": 11,
+      "uniqueVisitors": 8,
+      "contactSaves": 5
+    },
+    {
+      "date": "2025-11-23",
+      "views": 23,
+      "uniqueVisitors": 18,
+      "contactSaves": 4
+    },
+    {
+      "date": "2025-11-24",
+      "views": 22,
+      "uniqueVisitors": 17,
+      "contactSaves": 5
+    },
+    {
+      "date": "2025-11-25",
+      "views": 34,
+      "uniqueVisitors": 27,
+      "contactSaves": 2
+    },
+    {
+      "date": "2025-11-26",
+      "views": 22,
+      "uniqueVisitors": 17,
+      "contactSaves": 4
+    }
+  ],
+  "todayMetrics": {
+    "views": 23,
+    "contactSaves": 5,
+    "socialClicks": 8,
+    "uniqueVisitors": 18
+  },
+  "monthlyTotals": {
+    "totalViews": 247,
+    "totalContacts": 34,
+    "totalSocial": 56,
+    "conversionRate": 13.8
+  },
+  "trafficSources": [
+    {
+      "source": "QR Code",
+      "visits": 89,
+      "percentage": 36
+    },
+    {
+      "source": "Direct Link",
+      "visits": 67,
+      "percentage": 27
+    },
+    {
+      "source": "Social Media",
+      "visits": 45,
+      "percentage": 18
+    },
+    {
+      "source": "WhatsApp",
+      "visits": 31,
+      "percentage": 13
+    },
+    {
+      "source": "Other",
+      "visits": 15,
+      "percentage": 6
+    }
+  ],
+  "deviceStats": [
+    {
+      "device": "Mobile",
+      "visits": 156,
+      "percentage": 63
+    },
+    {
+      "device": "Desktop",
+      "visits": 68,
+      "percentage": 28
+    },
+    {
+      "device": "Tablet",
+      "visits": 23,
+      "percentage": 9
+    }
+  ],
+  "topLocations": [
+    {
+      "country": "Chile",
+      "city": "Santiago",
+      "visits": 89
+    },
+    {
+      "country": "Chile",
+      "city": "Valparaíso",
+      "visits": 34
+    },
+    {
+      "country": "Chile",
+      "city": "Concepción",
+      "visits": 23
+    },
+    {
+      "country": "Argentina",
+      "city": "Buenos Aires",
+      "visits": 12
+    },
+    {
+      "country": "Peru",
+      "city": "Lima",
+      "visits": 8
+    }
+  ],
+  "socialPerformance": [
+    {
+      "platform": "WhatsApp",
+      "clicks": 23,
+      "ctr": 15.3
+    },
+    {
+      "platform": "LinkedIn",
+      "clicks": 19,
+      "ctr": 12.7
+    },
+    {
+      "platform": "Instagram",
+      "clicks": 14,
+      "ctr": 9.3
+    }
+  ],
+  "hourlyActivity": [
+    {
+      "hour": "00:00",
+      "activity": 5
+    },
+    {
+      "hour": "01:00",
+      "activity": 5
+    },
+    {
+      "hour": "02:00",
+      "activity": 5
+    },
+    {
+      "hour": "03:00",
+      "activity": 5
+    },
+    {
+      "hour": "04:00",
+      "activity": 5
+    },
+    {
+      "hour": "05:00",
+      "activity": 5
+    },
+    {
+      "hour": "06:00",
+      "activity": 5
+    },
+    {
+      "hour": "07:00",
+      "activity": 5
+    },
+    {
+      "hour": "08:00",
+      "activity": 5
+    },
+    {
+      "hour": "09:00",
+      "activity": 27
+    },
+    {
+      "hour": "10:00",
+      "activity": 15
+    },
+    {
+      "hour": "11:00",
+      "activity": 28
+    },
+    {
+      "hour": "12:00",
+      "activity": 24
+    },
+    {
+      "hour": "13:00",
+      "activity": 26
+    },
+    {
+      "hour": "14:00",
+      "activity": 29
+    },
+    {
+      "hour": "15:00",
+      "activity": 18
+    },
+    {
+      "hour": "16:00",
+      "activity": 20
+    },
+    {
+      "hour": "17:00",
+      "activity": 26
+    },
+    {
+      "hour": "18:00",
+      "activity": 24
+    },
+    {
+      "hour": "19:00",
+      "activity": 14
+    },
+    {
+      "hour": "20:00",
+      "activity": 11
+    },
+    {
+      "hour": "21:00",
+      "activity": 17
+    },
+    {
+      "hour": "22:00",
+      "activity": 13
+    },
+    {
+      "hour": "23:00",
+      "activity": 5
+    }
+  ],
+  "recentEvents": [
+    {
+      "id": "6f8ea1f0-554f-4622-b2c7-863f93b02196",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T18:22:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "referral",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "890af1eb-c34a-4c2a-9fa8-453689c720a4",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T18:18:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "direct",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "d1ec2b29-29aa-463f-bb4c-3006469394c1",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T18:03:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "whatsapp",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "661130ef-df58-4a91-aab3-4ddcccb9e80f",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T17:06:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "direct",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "fa0aa30b-8905-4605-8ac0-f5b7f4b9cf96",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T17:05:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "qr_code",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "fc7efadb-5b63-4036-b230-1afb261bbe8c",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "view",
+      "timestamp": "2025-11-26T16:03:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "referral",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "81a6e5b7-c271-4adb-a271-ad72c29ac9ca",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T16:00:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "social",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "cf99e88c-d5f9-42aa-9503-1c2067c5b1bb",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T15:54:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "social",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "13729116-4dbe-479d-a1e6-a3de3310a763",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T15:52:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "social",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "11cc642e-ca48-4cca-98e8-1e41316a1dbe",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T15:01:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "social",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "c9e8b6c5-96eb-4957-b76b-82251bb11e35",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T13:00:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "social",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "2d8749b4-41a7-4d53-a93a-839438a76aa1",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T12:37:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "whatsapp",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "f4e50192-c2b8-4d0b-aca8-fdaac6a49397",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T12:00:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "qr_code",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "99e1e520-3236-48f8-9bd4-bca8bb1f6f19",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T11:34:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "social",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "69cc2962-4660-4d62-9385-52d808250ad6",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "view",
+      "timestamp": "2025-11-26T11:07:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "referral",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "8a5fe332-8c7a-412b-be3b-4319bdbf0fa3",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T10:41:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "direct",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "6aeb3de7-5738-4427-9e88-8ad449844ee6",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "view",
+      "timestamp": "2025-11-26T10:06:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "referral",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "b4edc290-6e63-475c-a3e9-176a03120bc6",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T09:40:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "social",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "a3f6499c-eb2b-425f-aaa5-074da384dab1",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T09:30:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "social",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "6381f107-3dfe-460f-a527-81972b302377",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T08:59:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "direct",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "308b3ae7-dce8-4f34-bc70-9225b727ce3c",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T08:44:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "qr_code",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "34f944f9-0dce-4efc-b74d-5f864e6f2c94",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "view",
+      "timestamp": "2025-11-26T08:28:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "referral",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "2c64cc6c-d819-40e3-b775-352ad422aeec",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "view",
+      "timestamp": "2025-11-26T07:54:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "direct",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "724d19b0-6998-465a-9c98-025c19e3888e",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T07:38:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "social",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "0305b373-b25e-4422-acaa-3cfba377e989",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T06:45:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "whatsapp",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "aea71a52-94c5-4c7f-a57f-88313a6cd1e7",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T06:43:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "social",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "15e2d752-fbe0-40f7-b9a9-6d9c900942a2",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T05:46:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "whatsapp",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "1a190048-fe3d-4206-836a-7b52a6f844ff",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T04:33:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "social",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "0c4ccce6-f54d-4a40-b062-960e9090f4c6",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T04:19:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "qr_code",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "84654461-cbea-490e-9083-97c301b57ae0",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T03:30:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "social",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "c66e0d32-8e4e-4f9b-9f55-2f28fa5dec57",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T02:16:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "referral",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "72550c59-2192-427d-984b-d29f478965c4",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "view",
+      "timestamp": "2025-11-26T02:12:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "social",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "1ad284d1-7bdc-4c97-8d2e-fcc4933e7a55",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-26T01:39:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "direct",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "dd34a388-073b-474f-a2b6-41cf8fce2502",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T01:06:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "referral",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "ce5765aa-5051-4ec2-bed9-add25a47cbb0",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T01:05:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "whatsapp",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "b8a536dc-0389-4347-b177-7367154c3aec",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T01:02:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "qr_code",
+        "location": "Valparaíso, Chile"
+      }
+    },
+    {
+      "id": "5125d016-7f7b-4ee7-943c-5fb1b2a8083b",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-26T00:50:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "direct",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "00286131-ec96-4a54-827d-f96f53910c24",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-26T00:44:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "direct",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "205d3be6-873e-47b9-87f1-f91b78399aa7",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-26T00:40:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "referral",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "55c89637-38fb-4b1e-8414-e039d0589c32",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-25T22:55:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "qr_code",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "10e556d5-e59c-45b8-b07b-7fb668895c50",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-25T22:51:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "referral",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "caf4a1fa-8542-44b6-8854-3553540d3ea5",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-25T22:47:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "social",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "66fe6db3-7bab-496d-94bc-5f622e6da6f6",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-25T22:42:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "referral",
+        "location": "Concepción, Chile"
+      }
+    },
+    {
+      "id": "3e46d4b9-68ba-44b7-a11a-57a476025ee4",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-25T22:40:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "direct",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "c7511558-df17-4dac-b79f-4f20914a8f75",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-25T22:01:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "direct",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "147b0b1d-08ec-4caf-bcb9-4560d404adf3",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-25T21:36:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "direct",
+        "location": "Lima, Peru"
+      }
+    },
+    {
+      "id": "3a84dd87-b8a6-4a16-af48-16131b33d786",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "qr_scan",
+      "timestamp": "2025-11-25T20:48:46.646Z",
+      "metadata": {
+        "device": "tablet",
+        "source": "direct",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "f661f4d7-5820-48c6-a963-63e2af04ed5d",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "profile_share",
+      "timestamp": "2025-11-25T20:41:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "referral",
+        "location": "Santiago, Chile"
+      }
+    },
+    {
+      "id": "f7106d26-4eeb-4860-b714-37a304827949",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "social_click",
+      "timestamp": "2025-11-25T19:55:46.646Z",
+      "metadata": {
+        "device": "mobile",
+        "source": "social",
+        "location": "Buenos Aires, Argentina"
+      }
+    },
+    {
+      "id": "dc06613b-86a6-4ba4-b432-fc7a0633f572",
+      "cardId": "c3140e8f-999a-41ef-b755-1dc4519afb9e",
+      "eventType": "contact_save",
+      "timestamp": "2025-11-25T19:49:46.646Z",
+      "metadata": {
+        "device": "desktop",
+        "source": "qr_code",
+        "location": "Buenos Aires, Argentina"
+      }
+    }
+  ]
+}
