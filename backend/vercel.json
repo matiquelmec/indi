@@ -1,34 +1,14 @@
 {
   "version": 2,
   "name": "indi-backend",
-  "builds": [
+  "rewrites": [
     {
-      "src": "src/server-simple.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["src/**"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/src/server-simple.ts"
+      "source": "/api/(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/(.*)",
-      "dest": "/src/server-simple.ts"
+      "source": "/(.*)",
+      "destination": "/api"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "SUPABASE_URL": "https://ikrpcaahwyibclvxbgtn.supabase.co",
-    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcnBjYWFod3lpYmNsdnhiZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA4NjYzMzcsImV4cCI6MjA0NjQ0MjMzN30.o2MYC5WDMR8CjAj5iCPGVs0eWLPXgF6YHbqJ-jnZcXM",
-    "SUPABASE_SERVICE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcnBjYWFod3lpYmNsdnhiZ3RuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMDg2NjMzNywiZXhwIjoyMDQ2NDQyMzM3fQ.Rno_rKhfA9XGZEHmKTQGmzxTTwfLNsmrU1ycv-0d5yE"
-  },
-  "functions": {
-    "src/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  ]
 }
