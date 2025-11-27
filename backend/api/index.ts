@@ -120,7 +120,7 @@ app.get('/api/cards', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Error fetching cards' });
     }
 
-    res.json(cards || []);
+    return res.json(cards || []);
   } catch (error) {
     console.error('Cards error:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -329,7 +329,7 @@ app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response)
 
     const conversionRate = totalViews > 0 ? ((totalContacts / totalViews) * 100) : 0;
 
-    res.json({
+    return res.json({
       overview: {
         totalCards: cards?.length || 0,
         totalViews,
@@ -411,7 +411,7 @@ app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
 
-      const dayViews = analytics?.filter(a =>
+      const dayViews = analytics?.filter((a: any) =>
         a.event_type === 'view' &&
         a.created_at.startsWith(dateStr)
       ).length || 0;
@@ -422,7 +422,7 @@ app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       cardInfo: {
         id: card.id,
         name: `${card.firstName} ${card.lastName}`,
