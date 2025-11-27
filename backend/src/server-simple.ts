@@ -2,9 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 // Load environment variables
 dotenv.config({ path: '.env.development' });
+
+// Initialize Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_KEY || ''
+);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -145,36 +152,164 @@ app.get('/api/analytics/dashboard/overview', (req, res): any => {
   });
 });
 
-// Detailed card analytics
-app.get('/api/analytics/cards/:cardId/detailed', (req, res): any => {
-  const { cardId } = req.params;
-  const mockData = loadMockAnalytics();
+// Detailed card analytics - Real Supabase Data
+app.get('/api/analytics/cards/:cardId/detailed', async (req, res): Promise<any> => {
+  try {
+    const { cardId } = req.params;
+    const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
 
-  if (!mockData || mockData.cardId !== cardId) {
-    return res.status(404).json({ error: 'Card analytics not found' });
+    if (!cardId) {
+      return res.status(400).json({ error: 'Card ID is required' });
+    }
+
+    // Verify the card belongs to the user
+    const { data: card, error: cardError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', cardId)
+      .eq('user_id', userId)
+      .single();
+
+    if (cardError || !card) {
+      console.error('Card not found or access denied:', cardError);
+      return res.status(404).json({ error: 'Card analytics not found' });
+    }
+
+    // Get analytics for this specific card
+    const { data: analytics, error: analyticsError } = await supabase
+      .from('analytics_events')
+      .select('*')
+      .eq('card_id', cardId)
+      .order('created_at', { ascending: false });
+
+    if (analyticsError) {
+      console.error('Error fetching card analytics:', analyticsError);
+      return res.status(500).json({ error: 'Error fetching analytics' });
+    }
+
+    // Calculate real metrics
+    const totalViews = analytics?.filter(a => a.event_type === 'view').length || 0;
+    const totalContacts = analytics?.filter(a => a.event_type === 'contact_save').length || 0;
+    const totalSocial = analytics?.filter(a => a.event_type === 'social_click').length || 0;
+    const conversionRate = totalViews > 0 ? ((totalContacts / totalViews) * 100) : 0;
+
+    // Get daily data for the last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+
+      const dayViews = analytics?.filter(a =>
+        a.event_type === 'view' && a.created_at.startsWith(dateStr)
+      ).length || 0;
+
+      const dayContacts = analytics?.filter(a =>
+        a.event_type === 'contact_save' && a.created_at.startsWith(dateStr)
+      ).length || 0;
+
+      last7Days.push({
+        date: dateStr,
+        views: dayViews,
+        uniqueVisitors: dayViews, // Simplified
+        contactSaves: dayContacts
+      });
+    }
+
+    // Mock audience data (simplified for now)
+    const mockAudienceData = {
+      trafficSources: [
+        { source: "Direct", percentage: 45, visits: Math.floor(totalViews * 0.45) },
+        { source: "Social Media", percentage: 30, visits: Math.floor(totalViews * 0.30) },
+        { source: "QR Code", percentage: 25, visits: Math.floor(totalViews * 0.25) }
+      ],
+      deviceBreakdown: [
+        { device: "Mobile", percentage: 70 },
+        { device: "Desktop", percentage: 25 },
+        { device: "Tablet", percentage: 5 }
+      ],
+      topLocations: [
+        { location: "Chile", visits: Math.floor(totalViews * 0.80) },
+        { location: "Argentina", visits: Math.floor(totalViews * 0.15) },
+        { location: "Peru", visits: Math.floor(totalViews * 0.05) }
+      ],
+      socialPerformance: [
+        { platform: "LinkedIn", clicks: Math.floor(totalSocial * 0.40) },
+        { platform: "Instagram", clicks: Math.floor(totalSocial * 0.35) },
+        { platform: "WhatsApp", clicks: Math.floor(totalSocial * 0.25) }
+      ]
+    };
+
+    res.json({
+      cardId,
+      cardTitle: card.title || card.first_name || card.firstName || 'Untitled Card',
+      metrics: {
+        totalViews,
+        totalContacts,
+        totalSocial,
+        conversionRate: Number(conversionRate.toFixed(1)),
+        uniqueVisitors: totalViews // Simplified
+      },
+      dailyData: last7Days,
+      hourlyActivity: [], // Could be implemented later
+      audience: mockAudienceData,
+      recentActivity: analytics?.slice(0, 20) || [],
+      lastUpdated: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Individual analytics error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
+});
 
-  res.json({
-    cardId,
-    cardTitle: mockData.cardTitle,
-    metrics: {
-      totalViews: mockData.monthlyTotals.totalViews,
-      totalContacts: mockData.monthlyTotals.totalContacts,
-      totalSocial: mockData.monthlyTotals.totalSocial,
-      conversionRate: mockData.monthlyTotals.conversionRate,
-      uniqueVisitors: mockData.todayMetrics.uniqueVisitors
-    },
-    dailyData: mockData.weeklyViews,
-    hourlyActivity: mockData.hourlyActivity,
-    audience: {
-      trafficSources: mockData.trafficSources,
-      deviceBreakdown: mockData.deviceStats,
-      topLocations: mockData.topLocations,
-      socialPerformance: mockData.socialPerformance
-    },
-    recentActivity: mockData.recentEvents.slice(0, 20),
-    lastUpdated: new Date().toISOString()
-  });
+// Public card endpoint (for sharing)
+app.get('/api/cards/:cardId/public', async (req, res) => {
+  try {
+    const { cardId } = req.params;
+
+    if (!cardId) {
+      return res.status(400).json({ error: 'Card ID is required' });
+    }
+
+    // Get card from Supabase (public access, no user_id filter for sharing)
+    const { data: card, error: cardError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', cardId)
+      .eq('is_published', true) // Only published cards can be accessed publicly
+      .single();
+
+    if (cardError || !card) {
+      console.error('Public card not found:', cardError);
+      return res.status(404).json({ error: 'Card not found or not published' });
+    }
+
+    // Track the view analytics
+    try {
+      await supabase
+        .from('analytics_events')
+        .insert({
+          card_id: cardId,
+          event_type: 'view',
+          metadata: {
+            user_agent: req.headers['user-agent'],
+            referer: req.headers.referer,
+            ip: req.ip
+          }
+        });
+    } catch (analyticsError) {
+      console.warn('Failed to track view:', analyticsError);
+      // Don't fail the request if analytics tracking fails
+    }
+
+    // Return the public card data
+    res.json(card);
+
+  } catch (error) {
+    console.error('Public card fetch error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Real-time metrics

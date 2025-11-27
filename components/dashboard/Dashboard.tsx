@@ -25,16 +25,24 @@ interface DashboardProps {
   onViewLive: (card: DigitalCard) => void;
   language: Language;
   onUpgrade: (card: DigitalCard) => void; // New prop for upgrade flow
+  analyticsMode?: 'global' | 'individual';
+  onAnalyticsModeChange?: (mode: 'global' | 'individual') => void;
+  selectedAnalyticsCardId?: string | null;
+  onAnalyticsCardSelect?: (cardId: string | null) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ 
-  cards, 
-  onCreateNew, 
-  onEdit, 
-  onDelete, 
+const Dashboard: React.FC<DashboardProps> = ({
+  cards,
+  onCreateNew,
+  onEdit,
+  onDelete,
   onViewLive,
   language,
-  onUpgrade
+  onUpgrade,
+  analyticsMode = 'global',
+  onAnalyticsModeChange,
+  selectedAnalyticsCardId,
+  onAnalyticsCardSelect
 }) => {
   const t = translations[language].dashboard;
   
@@ -110,7 +118,15 @@ const Dashboard: React.FC<DashboardProps> = ({
            <BarChart3 className="text-blue-400" size={24} />
            {t.performance}
         </h2>
-        <Analytics data={MOCK_ANALYTICS} language={language} />
+        <Analytics
+          data={MOCK_ANALYTICS}
+          language={language}
+          analyticsMode={analyticsMode}
+          onAnalyticsModeChange={onAnalyticsModeChange}
+          selectedAnalyticsCardId={selectedAnalyticsCardId}
+          onAnalyticsCardSelect={onAnalyticsCardSelect}
+          cards={cards}
+        />
       </div>
     </div>
   );

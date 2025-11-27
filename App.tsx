@@ -33,9 +33,37 @@ function AppContent() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
 
+  // Analytics State
+  const [analyticsMode, setAnalyticsMode] = useState<'global' | 'individual'>('global');
+  const [selectedAnalyticsCardId, setSelectedAnalyticsCardId] = useState<string | null>(null);
+
+  // Track whether current card was loaded from external URL
+  const [isExternalCard, setIsExternalCard] = useState(false);
+
   // Derived State
   const activeCard = cards.find(c => c.id === selectedCardId) || null;
   const t = translations[language].nav;
+
+  // Function to fetch card from backend if not found locally
+  const fetchCardFromBackend = async (cardId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/cards/${cardId}/public`);
+      if (response.ok) {
+        const card = await response.json();
+        setCards(prev => [...prev.filter(c => c.id !== cardId), card]);
+        setSelectedCardId(cardId);
+        setCurrentView('live');
+        setIsExternalCard(true); // Mark as external card
+      } else {
+        console.error('Card not found:', cardId);
+        // Redirect to 404 or landing page
+        setCurrentView('landing');
+      }
+    } catch (error) {
+      console.error('Error fetching card:', error);
+      setCurrentView('landing');
+    }
+  };
 
   // --- EFFECTS ---
   useEffect(() => {
@@ -43,24 +71,71 @@ function AppContent() {
     const storedCards = getStoredCards();
     setCards(storedCards);
 
-    // Check for Shared URL Parameters (Simulation of Routing)
-    // ?shareId=12345
-    const params = new URLSearchParams(window.location.search);
-    const shareId = params.get('shareId');
-    const view = params.get('view');
+    // Enhanced URL Routing System
+    const checkRouting = () => {
+      const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
 
-    if (shareId) {
-       // In a real app, fetch from DB. Here we check local storage mock.
-       const sharedCard = storedCards.find(c => c.id === shareId);
-       if (sharedCard) {
-         setSelectedCardId(sharedCard.id);
-         setCurrentView('live');
-       }
-    } else if (view === 'live' && storedCards.length > 0) {
-        // Fallback demo
-        setSelectedCardId(storedCards[0].id);
-        setCurrentView('live');
-    }
+      // Support both new and legacy URL formats
+      // New format: /card/[id] or /u/[username]
+      // Legacy format: ?shareId=[id]
+
+      let cardId = null;
+
+      // Check new path-based routing
+      if (path.startsWith('/card/')) {
+        cardId = path.split('/card/')[1];
+      } else if (path.startsWith('/u/')) {
+        const username = path.split('/u/')[1];
+        // Find card by username/slug (you can implement username-based lookup later)
+        const cardByUsername = storedCards.find(c =>
+          `${c.firstName || ''}-${c.lastName || ''}`.toLowerCase().replace(/\s+/g, '-') === username
+        );
+        if (cardByUsername) {
+          cardId = cardByUsername.id;
+        }
+      }
+      // Fallback to legacy query param routing
+      else {
+        cardId = params.get('shareId');
+        const view = params.get('view');
+
+        if (!cardId && view === 'live' && storedCards.length > 0) {
+          // Fallback demo
+          cardId = storedCards[0].id;
+        }
+      }
+
+      if (cardId) {
+        // Check both localStorage and potentially Supabase
+        let sharedCard = storedCards.find(c => c.id === cardId);
+
+        if (sharedCard) {
+          setSelectedCardId(sharedCard.id);
+          setCurrentView('live');
+          setIsExternalCard(false); // It's user's own card
+
+          // Update URL to clean format if using legacy
+          if (window.location.search.includes('shareId')) {
+            const newUrl = `/card/${cardId}`;
+            window.history.replaceState({}, '', newUrl);
+          }
+        } else {
+          // If not found in localStorage, try to fetch from backend
+          fetchCardFromBackend(cardId);
+        }
+      }
+    };
+
+    checkRouting();
+
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      checkRouting();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Auto-redirect based on auth state
@@ -128,6 +203,41 @@ function AppContent() {
   const handleViewLive = (card: DigitalCard) => {
     setSelectedCardId(card.id);
     setCurrentView('live');
+    setIsExternalCard(false); // Reset external flag for owned cards
+
+    // Update URL for live view
+    const cleanName = `${card.firstName || ''}-${card.lastName || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const hasValidName = cleanName && cleanName.length > 1;
+
+    const newUrl = hasValidName
+      ? `/u/${cleanName}`
+      : `/card/${card.id}`;
+
+    window.history.pushState({}, '', newUrl);
+  };
+
+  // Helper function to generate shareable URLs
+  const generateShareableUrl = (card: DigitalCard): string => {
+    const cleanName = `${card.firstName || ''}-${card.lastName || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const hasValidName = cleanName && cleanName.length > 1;
+
+    return hasValidName
+      ? `${window.location.origin}/u/${cleanName}`
+      : `${window.location.origin}/card/${card.id}`;
+  };
+
+  // Check if current user is the owner of the active card
+  const isCardOwner = (card: DigitalCard | null): boolean => {
+    if (!card || !isAuthenticated || !user) return false;
+
+    // If card was loaded from external URL, it's definitely not owned by current user
+    if (isExternalCard) return false;
+
+    // Check if card exists in user's stored cards (means they own it)
+    const userCards = getStoredCards();
+    const isOwnCard = userCards.some(c => c.id === card.id);
+
+    return isOwnCard;
   };
 
   const handleGoToDashboard = () => {
@@ -136,6 +246,10 @@ function AppContent() {
     setSelectedCardId(null);
     setCurrentView('dashboard');
     setIsMobileMenuOpen(false);
+    setIsExternalCard(false); // Reset external flag
+
+    // Clean URL when going back to dashboard
+    window.history.pushState({}, '', '/');
   };
 
   const handleGoToEditor = () => {
@@ -167,9 +281,16 @@ function AppContent() {
     setIsPublishing(true);
     setTimeout(() => {
       setIsPublishing(false);
-      const uniqueId = Math.random().toString(36).substring(7);
-      // Generate a link that works with our Query Param logic
-      const publishedUrl = `${window.location.origin}/?shareId=${activeCard.id}`;
+
+      // Generate clean, professional URLs
+      const cleanName = `${activeCard.firstName || ''}-${activeCard.lastName || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const hasValidName = cleanName && cleanName.length > 1;
+
+      // Use pretty URL format: /u/name-lastname or fallback to /card/id
+      const publishedUrl = hasValidName
+        ? `${window.location.origin}/u/${cleanName}`
+        : `${window.location.origin}/card/${activeCard.id}`;
+
       const publishedCard = { ...activeCard, isPublished: true, publishedUrl, isTemporary: false };
 
       // Si es temporal, guardarlo por primera vez en storage
@@ -211,7 +332,10 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-black">
         <CardPreview card={activeCard} mode="live" language={language} />
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+
+        {/* Show edit buttons only for card owners */}
+        {isCardOwner(activeCard) && (
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
             <button onClick={() => setCurrentView('editor')} className="flex items-center gap-2 px-5 py-3 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-full shadow-2xl text-white font-medium hover:bg-slate-800 transition-all">
                <Edit3 size={18} />
                <span>{language === 'es' ? 'Editar Tarjeta' : 'Edit Card'}</span>
@@ -219,7 +343,31 @@ function AppContent() {
             <button onClick={handleGoToDashboard} className="flex items-center justify-center w-12 h-12 bg-black/50 backdrop-blur-md border border-slate-700 rounded-full shadow-2xl text-white hover:bg-slate-900 transition-all">
                <LayoutDashboard size={18} />
             </button>
-        </div>
+          </div>
+        )}
+
+        {/* Show branding and CTA for external visitors */}
+        {!isCardOwner(activeCard) && (
+          <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3">
+            {/* Branding */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-slate-700/50 rounded-full text-slate-300 text-sm">
+              <span className="font-semibold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">INDI</span>
+              <span className="text-slate-500">Digital Card</span>
+            </div>
+
+            {/* Call to Action */}
+            <button
+              onClick={() => {
+                setCurrentView('landing');
+                window.history.pushState({}, '', '/');
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600/90 backdrop-blur-md border border-emerald-500/50 rounded-full text-white text-sm font-medium hover:bg-emerald-500 transition-all shadow-lg"
+            >
+              <span>Crear mi tarjeta</span>
+              <span className="text-xs">→</span>
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -365,7 +513,19 @@ function AppContent() {
 
         {currentView === 'dashboard' && (
            <div className="w-full h-full overflow-y-auto scrollbar-hide animate-fade-in">
-             <Dashboard cards={cards.filter(card => !card.isTemporary)} onCreateNew={handleCreateCard} onEdit={handleEditCard} onDelete={handleDeleteCard} onViewLive={handleViewLive} onUpgrade={handleUpgradeClick} language={language} />
+             <Dashboard
+               cards={cards.filter(card => !card.isTemporary)}
+               onCreateNew={handleCreateCard}
+               onEdit={handleEditCard}
+               onDelete={handleDeleteCard}
+               onViewLive={handleViewLive}
+               onUpgrade={handleUpgradeClick}
+               language={language}
+               analyticsMode={analyticsMode}
+               onAnalyticsModeChange={setAnalyticsMode}
+               selectedAnalyticsCardId={selectedAnalyticsCardId}
+               onAnalyticsCardSelect={setSelectedAnalyticsCardId}
+             />
            </div>
         )}
       </main>
@@ -378,7 +538,7 @@ function AppContent() {
         </div>
       )}
 
-      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={activeCard?.publishedUrl || ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
+      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={activeCard ? generateShareableUrl(activeCard) : ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
 
     </div>
