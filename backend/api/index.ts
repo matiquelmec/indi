@@ -3,6 +3,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
+const {
+  mapCardToDatabase,
+  mapCardFromDatabase,
+  mapCardsFromDatabase,
+  prepareCardUpdate,
+  generateSlug,
+  generatePublishedUrl
+} = require('./utils/cardMappers');
 
 // Type definitions for Express
 interface Request {
@@ -120,7 +128,9 @@ app.get('/api/cards', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Error fetching cards' });
     }
 
-    return res.json(cards || []);
+    // Use shared mapper for consistent transformation
+    const mappedCards = mapCardsFromDatabase(cards);
+    return res.json(mappedCards);
   } catch (error) {
     console.error('Cards error:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -130,25 +140,17 @@ app.get('/api/cards', async (req: Request, res: Response) => {
 // Create new card
 app.post('/api/cards', async (req: Request, res: Response) => {
   try {
-    // Map frontend camelCase to database snake_case
-    const cardData = {
-      user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
-      first_name: req.body.firstName,
-      last_name: req.body.lastName,
-      title: req.body.title,
-      company: req.body.company,
-      phone: req.body.phone,
-      email: req.body.email,
-      website: req.body.website,
-      bio: req.body.bio,
-      avatar_url: req.body.avatarUrl,
-      cover_url: req.body.coverUrl,
-      social_links: req.body.socialLinks,
-      contact_fields: req.body.contactFields,
-      theme_config: req.body.themeConfig,
-      is_published: req.body.isPublished || false,
-      views_count: 0
-    };
+    // Use shared mapper for consistent data transformation
+    const userId = req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567';
+    const cardData = mapCardToDatabase(req.body, userId);
+
+    // Generate slug and published URL if creating a published card
+    if (cardData.is_published && !cardData.custom_slug) {
+      const slug = generateSlug(cardData.first_name, cardData.last_name);
+      cardData.custom_slug = slug;
+      cardData.published_url = generatePublishedUrl(slug, null, process.env.FRONTEND_URL || 'https://indi-frontend.vercel.app');
+      cardData.published_at = new Date().toISOString();
+    }
 
     const { data: newCard, error } = await supabase
       .from('cards')
@@ -161,28 +163,8 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Failed to create card' });
     }
 
-    // Map database snake_case back to frontend camelCase
-    const responseCard = {
-      id: newCard.id,
-      userId: newCard.user_id,
-      firstName: newCard.first_name,
-      lastName: newCard.last_name,
-      title: newCard.title,
-      company: newCard.company,
-      phone: newCard.phone,
-      email: newCard.email,
-      website: newCard.website,
-      bio: newCard.bio,
-      avatarUrl: newCard.avatar_url,
-      coverUrl: newCard.cover_url,
-      socialLinks: newCard.social_links,
-      contactFields: newCard.contact_fields,
-      themeConfig: newCard.theme_config,
-      isPublished: newCard.is_published,
-      viewsCount: newCard.views_count,
-      createdAt: newCard.created_at,
-      updatedAt: newCard.updated_at
-    };
+    // Use shared mapper for response
+    const responseCard = mapCardFromDatabase(newCard);
 
     return res.status(201).json(responseCard);
   } catch (error) {
@@ -224,29 +206,24 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Map frontend camelCase to database snake_case
-    const cardData = {
-      user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
-      first_name: req.body.firstName,
-      last_name: req.body.lastName,
-      title: req.body.title,
-      company: req.body.company,
-      phone: req.body.phone,
-      email: req.body.email,
-      website: req.body.website,
-      bio: req.body.bio,
-      avatar_url: req.body.avatarUrl,
-      cover_url: req.body.coverUrl,
-      social_links: req.body.socialLinks,
-      contact_fields: req.body.contactFields,
-      theme_config: req.body.themeConfig,
-      is_published: req.body.isPublished,
-      views_count: req.body.viewsCount || 0
-    };
+    // Use shared mapper for update data preparation
+    const updateData = prepareCardUpdate(req.body);
+
+    // Handle publishing logic
+    if (req.body.isPublished && !updateData.published_at) {
+      updateData.published_at = new Date().toISOString();
+
+      // Generate slug and URL if not already set
+      if (!updateData.custom_slug && req.body.firstName && req.body.lastName) {
+        const slug = generateSlug(req.body.firstName, req.body.lastName);
+        updateData.custom_slug = slug;
+        updateData.published_url = generatePublishedUrl(slug, id, process.env.FRONTEND_URL || 'https://indi-frontend.vercel.app');
+      }
+    }
 
     const { data: updatedCard, error } = await supabase
       .from('cards')
-      .update(cardData)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -260,28 +237,8 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Card not found' });
     }
 
-    // Map database snake_case back to frontend camelCase
-    const responseCard = {
-      id: updatedCard.id,
-      userId: updatedCard.user_id,
-      firstName: updatedCard.first_name,
-      lastName: updatedCard.last_name,
-      title: updatedCard.title,
-      company: updatedCard.company,
-      phone: updatedCard.phone,
-      email: updatedCard.email,
-      website: updatedCard.website,
-      bio: updatedCard.bio,
-      avatarUrl: updatedCard.avatar_url,
-      coverUrl: updatedCard.cover_url,
-      socialLinks: updatedCard.social_links,
-      contactFields: updatedCard.contact_fields,
-      themeConfig: updatedCard.theme_config,
-      isPublished: updatedCard.is_published,
-      viewsCount: updatedCard.views_count,
-      createdAt: updatedCard.created_at,
-      updatedAt: updatedCard.updated_at
-    };
+    // Use shared mapper for response
+    const responseCard = mapCardFromDatabase(updatedCard);
 
     return res.json(responseCard);
   } catch (error) {
