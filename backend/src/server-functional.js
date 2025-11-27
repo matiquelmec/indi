@@ -122,9 +122,13 @@ app.post('/api/auth/login', async (req, res) => {
 // Cards endpoints - REAL DATA with full schema support
 app.get('/api/cards', async (req, res) => {
   try {
+    // Get current user from auth (simplified for demo)
+    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+
     const { data: cards, error } = await supabase
       .from('cards')
       .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
