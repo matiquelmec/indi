@@ -127,6 +127,141 @@ app.get('/api/cards', async (req: Request, res: Response) => {
   }
 });
 
+// Create new card
+app.post('/api/cards', async (req: Request, res: Response) => {
+  try {
+    // Map frontend camelCase to database snake_case
+    const cardData = {
+      user_id: req.body.userId || 'a626f7d9-9582-43be-a569-afc3aadac3db',
+      first_name: req.body.firstName,
+      last_name: req.body.lastName,
+      title: req.body.title,
+      company: req.body.company,
+      phone: req.body.phone,
+      email: req.body.email,
+      website: req.body.website,
+      bio: req.body.bio,
+      avatar_url: req.body.avatarUrl,
+      cover_url: req.body.coverUrl,
+      social_links: req.body.socialLinks,
+      contact_fields: req.body.contactFields,
+      theme_config: req.body.themeConfig,
+      is_published: req.body.isPublished || false,
+      views_count: 0
+    };
+
+    const { data: newCard, error } = await supabase
+      .from('cards')
+      .insert(cardData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Card creation error:', error);
+      return res.status(500).json({ error: 'Failed to create card' });
+    }
+
+    // Map database snake_case back to frontend camelCase
+    const responseCard = {
+      id: newCard.id,
+      userId: newCard.user_id,
+      firstName: newCard.first_name,
+      lastName: newCard.last_name,
+      title: newCard.title,
+      company: newCard.company,
+      phone: newCard.phone,
+      email: newCard.email,
+      website: newCard.website,
+      bio: newCard.bio,
+      avatarUrl: newCard.avatar_url,
+      coverUrl: newCard.cover_url,
+      socialLinks: newCard.social_links,
+      contactFields: newCard.contact_fields,
+      themeConfig: newCard.theme_config,
+      isPublished: newCard.is_published,
+      viewsCount: newCard.views_count,
+      createdAt: newCard.created_at,
+      updatedAt: newCard.updated_at
+    };
+
+    return res.status(201).json(responseCard);
+  } catch (error) {
+    console.error('Card creation error:', error);
+    return res.status(500).json({ error: 'Failed to create card' });
+  }
+});
+
+// Update existing card
+app.put('/api/cards/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Map frontend camelCase to database snake_case
+    const cardData = {
+      user_id: req.body.userId || 'a626f7d9-9582-43be-a569-afc3aadac3db',
+      first_name: req.body.firstName,
+      last_name: req.body.lastName,
+      title: req.body.title,
+      company: req.body.company,
+      phone: req.body.phone,
+      email: req.body.email,
+      website: req.body.website,
+      bio: req.body.bio,
+      avatar_url: req.body.avatarUrl,
+      cover_url: req.body.coverUrl,
+      social_links: req.body.socialLinks,
+      contact_fields: req.body.contactFields,
+      theme_config: req.body.themeConfig,
+      is_published: req.body.isPublished,
+      views_count: req.body.viewsCount || 0
+    };
+
+    const { data: updatedCard, error } = await supabase
+      .from('cards')
+      .update(cardData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Card update error:', error);
+      return res.status(500).json({ error: 'Failed to update card' });
+    }
+
+    if (!updatedCard) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    // Map database snake_case back to frontend camelCase
+    const responseCard = {
+      id: updatedCard.id,
+      userId: updatedCard.user_id,
+      firstName: updatedCard.first_name,
+      lastName: updatedCard.last_name,
+      title: updatedCard.title,
+      company: updatedCard.company,
+      phone: updatedCard.phone,
+      email: updatedCard.email,
+      website: updatedCard.website,
+      bio: updatedCard.bio,
+      avatarUrl: updatedCard.avatar_url,
+      coverUrl: updatedCard.cover_url,
+      socialLinks: updatedCard.social_links,
+      contactFields: updatedCard.contact_fields,
+      themeConfig: updatedCard.theme_config,
+      isPublished: updatedCard.is_published,
+      viewsCount: updatedCard.views_count,
+      createdAt: updatedCard.created_at,
+      updatedAt: updatedCard.updated_at
+    };
+
+    return res.json(responseCard);
+  } catch (error) {
+    console.error('Card update error:', error);
+    return res.status(500).json({ error: 'Failed to update card' });
+  }
+});
+
 // Real Analytics from Supabase - Global Overview
 app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response) => {
   try {
