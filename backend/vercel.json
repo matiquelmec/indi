@@ -1,11 +1,6 @@
 {
   "version": 2,
   "name": "indi-backend",
-  "functions": {
-    "api/index.ts": {
-      "runtime": "nodejs22.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
