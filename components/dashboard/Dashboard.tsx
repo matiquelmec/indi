@@ -258,11 +258,11 @@ const CardItem: React.FC<CardItemProps> = ({ card, onEdit, onDelete, onView, onU
             </button>
             <button 
               type="button"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if(window.confirm(t.actions.deleteConfirm)) {
-                   onDelete();
+                   await onDelete();
                 }
               }}
               className="flex flex-col items-center gap-1 text-slate-400 hover:text-red-400 transition-colors py-2 rounded-lg hover:bg-slate-800 cursor-pointer"

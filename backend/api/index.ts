@@ -479,6 +479,48 @@ app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
   }
 });
 
+// Delete existing card
+app.delete('/api/cards/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+
+    if (!id) {
+      return res.status(400).json({ error: 'Card ID is required' });
+    }
+
+    // Verify card belongs to user before deleting
+    const { data: existingCard, error: fetchError } = await supabase
+      .from('cards')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError || !existingCard) {
+      console.error('Card not found or access denied:', fetchError);
+      return res.status(404).json({ error: 'Card not found or access denied' });
+    }
+
+    // Delete the card
+    const { error: deleteError } = await supabase
+      .from('cards')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('Error deleting card:', deleteError);
+      return res.status(500).json({ error: 'Failed to delete card' });
+    }
+
+    return res.json({ message: 'Card deleted successfully', id });
+  } catch (error) {
+    console.error('Delete card error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // 404 handler
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({

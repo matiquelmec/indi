@@ -11,6 +11,7 @@ import LoginPage from './components/auth/LoginPage';
 import { DigitalCard, Language, ViewState } from './types';
 import { getStoredCards, saveCardToStorage, deleteCardFromStorage, createNewCardTemplate } from './services/storageService';
 import { translations } from './lib/i18n';
+import { generateProfileUrl } from './lib/urlUtils';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -208,14 +209,37 @@ function AppContent() {
     setCurrentView('editor');
   };
 
-  const handleDeleteCard = (id: string) => {
+  const handleDeleteCard = async (id: string) => {
     if (!id) return;
-    const updatedCards = deleteCardFromStorage(id);
-    setCards([...updatedCards]); // Force refresh
-    
-    if (selectedCardId === id) {
-      setSelectedCardId(null);
-      setCurrentView('dashboard');
+
+    try {
+      // Delete from backend first
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to delete card from backend');
+        return; // Don't delete locally if backend fails
+      }
+
+      // If backend deletion successful, delete from localStorage
+      const updatedCards = deleteCardFromStorage(id);
+      setCards([...updatedCards]); // Force refresh
+
+      // Reset view if deleted card was selected
+      if (selectedCardId === id) {
+        setSelectedCardId(null);
+        setCurrentView('dashboard');
+      }
+
+      console.log('Card deleted successfully:', id);
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      // Optionally show user feedback here
     }
   };
 
@@ -357,14 +381,12 @@ function AppContent() {
     setTimeout(() => {
       setIsPublishing(false);
 
-      // Generate clean, professional URLs
-      const cleanName = `${activeCard.firstName || ''}-${activeCard.lastName || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      const hasValidName = cleanName && cleanName.length > 1;
-
-      // Use pretty URL format: /u/name-lastname or fallback to /card/id
-      const publishedUrl = hasValidName
-        ? `${window.location.origin}/u/${cleanName}`
-        : `${window.location.origin}/card/${activeCard.id}`;
+      // Generate clean, professional URLs with proper character normalization
+      const publishedUrl = generateProfileUrl(
+        activeCard.firstName || '',
+        activeCard.lastName || '',
+        activeCard.id
+      );
 
       const publishedCard = { ...activeCard, isPublished: true, publishedUrl, isTemporary: false };
 
