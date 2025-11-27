@@ -48,7 +48,8 @@ export interface DigitalCard {
   socialLinks: SocialLink[];
   isPublished?: boolean;
   publishedUrl?: string;
-  
+  isTemporary?: boolean; // True si es una plantilla temporal no guardada
+
   // Business Logic Fields
   subscriptionStatus?: SubscriptionStatus;
   trialEndsAt?: number; // Timestamp

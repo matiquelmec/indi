@@ -103,8 +103,8 @@ function AppContent() {
   // --- NAVIGATION HANDLERS ---
   const handleCreateCard = () => {
     const newCard = createNewCardTemplate();
-    const updatedCards = saveCardToStorage(newCard);
-    setCards(updatedCards);
+    // NO guardar en storage todavía - solo crear plantilla temporal
+    setCards(prev => [...prev, { ...newCard, isTemporary: true }]);
     setSelectedCardId(newCard.id);
     setCurrentView('editor');
   };
@@ -131,6 +131,9 @@ function AppContent() {
   };
 
   const handleGoToDashboard = () => {
+    // Limpiar tarjetas temporales no publicadas al regresar al dashboard
+    setCards(prev => prev.filter(card => !card.isTemporary));
+    setSelectedCardId(null);
     setCurrentView('dashboard');
     setIsMobileMenuOpen(false);
   };
@@ -150,7 +153,10 @@ function AppContent() {
   // --- EDITOR HANDLERS ---
   const handleSaveCard = (cardToSave: DigitalCard) => {
     setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
-    saveCardToStorage(cardToSave);
+    // Solo guardar en storage si NO es temporal
+    if (!cardToSave.isTemporary) {
+      saveCardToStorage(cardToSave);
+    }
   };
 
   const handlePublish = () => {
@@ -164,8 +170,17 @@ function AppContent() {
       const uniqueId = Math.random().toString(36).substring(7);
       // Generate a link that works with our Query Param logic
       const publishedUrl = `${window.location.origin}/?shareId=${activeCard.id}`;
-      const publishedCard = { ...activeCard, isPublished: true, publishedUrl };
-      handleSaveCard(publishedCard);
+      const publishedCard = { ...activeCard, isPublished: true, publishedUrl, isTemporary: false };
+
+      // Si es temporal, guardarlo por primera vez en storage
+      if (activeCard.isTemporary) {
+        const updatedCards = saveCardToStorage(publishedCard);
+        setCards(updatedCards);
+      } else {
+        // Si ya existe, solo actualizarlo
+        handleSaveCard(publishedCard);
+      }
+
       setShowShareModal(true);
     }, 1500);
   };
@@ -350,7 +365,7 @@ function AppContent() {
 
         {currentView === 'dashboard' && (
            <div className="w-full h-full overflow-y-auto scrollbar-hide animate-fade-in">
-             <Dashboard cards={cards} onCreateNew={handleCreateCard} onEdit={handleEditCard} onDelete={handleDeleteCard} onViewLive={handleViewLive} onUpgrade={handleUpgradeClick} language={language} />
+             <Dashboard cards={cards.filter(card => !card.isTemporary)} onCreateNew={handleCreateCard} onEdit={handleEditCard} onDelete={handleDeleteCard} onViewLive={handleViewLive} onUpgrade={handleUpgradeClick} language={language} />
            </div>
         )}
       </main>
