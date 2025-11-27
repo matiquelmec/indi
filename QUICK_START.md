@@ -1,114 +1,229 @@
-# 🚀 GUÍA RÁPIDA - INDI Production Setup
+# ⚡ INDI Digital Cards - Quick Start
 
-## ⚡ Inicio Rápido con Docker
+> Get up and running in under 5 minutes!
 
+## 🚀 Local Development
+
+### 1. Prerequisites
 ```bash
-# 1. Clonar y navegar al proyecto
-cd "Indi Final"
-
-# 2. Copiar variables de entorno
-cp .env.example .env
-# Editar .env con tus valores reales
-
-# 3. Iniciar todo con Docker
-docker-compose up -d
-
-# 4. Ver los logs
-docker-compose logs -f
+# Required versions
+Node.js >= 18.0.0
+npm >= 9.0.0
 ```
 
-**URLs:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000/api
-- pgAdmin: http://localhost:5050 (admin@indi.com / admin)
-
-## 🛠️ Desarrollo Sin Docker
-
-### Backend
+### 2. Installation
 ```bash
+# Clone and install
+git clone <repository-url>
+cd indi-final
+npm install
+
+# Install backend dependencies
 cd backend
 npm install
-# Configurar PostgreSQL y Redis localmente
-# Actualizar .env con conexiones locales
+cd ..
+```
+
+### 3. Environment Setup
+```bash
+# Copy environment files
+cp .env.example .env.local
+cp backend/.env.development.example backend/.env.development
+
+# Configure your Supabase credentials in:
+# - backend/.env.development
+```
+
+### 4. Start Development
+```bash
+# Terminal 1: Start frontend
+npm run dev
+
+# Terminal 2: Start backend
+cd backend && npm run dev
+```
+
+🎉 **You're ready!**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5003
+
+## 🌐 Production Deployment
+
+### 1. Quick Deploy to Vercel
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel --prod
+
+# Configure environment variables in Vercel dashboard
+```
+
+### 2. Environment Variables for Vercel
+```env
+# Frontend
+VITE_APP_MODE=production
+VITE_API_URL=https://your-backend.vercel.app/api
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# Backend
+NODE_ENV=production
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_KEY=your-service-key
+JWT_SECRET=your-64-char-secret
+```
+
+## 📁 Key Files
+
+```
+📦 Project Structure
+├── 🎨 Frontend
+│   ├── App.tsx              # Main app component
+│   ├── components/          # UI components
+│   │   ├── dashboard/       # Dashboard components
+│   │   ├── editor/          # Card editor
+│   │   └── card/            # Card display
+│   ├── lib/urlUtils.ts      # URL utilities
+│   └── constants.ts         # App constants
+├── ⚡ Backend
+│   ├── api/index.ts         # Production API (Vercel)
+│   └── src/server-functional.js # Development server
+└── 📄 Config
+    ├── vercel.json          # Deployment config
+    ├── package.json         # Dependencies
+    └── .env.example         # Environment template
+```
+
+## 🔧 Development Commands
+
+```bash
+# Frontend
+npm run dev         # Start dev server
+npm run build       # Build for production
+npm run preview     # Preview production build
+npm test           # Run tests
+
+# Backend
+cd backend
+npm run dev         # Start development server
+npm run build       # Build TypeScript
+npm test           # Run backend tests
+```
+
+## 🎯 Core Features
+
+### 📇 Digital Cards
+- Professional card templates
+- Real-time editing
+- Custom branding
+- Social media integration
+
+### 📊 Analytics
+- View tracking
+- Engagement metrics
+- Performance insights
+- Export capabilities
+
+### 🔗 Sharing
+- SEO-friendly URLs
+- Social media optimization
+- QR code generation
+- Contact export
+
+## 🛠️ Development Workflow
+
+### 1. Creating New Features
+```bash
+# Create feature branch
+git checkout -b feature/new-feature
+
+# Make changes
+# Test locally
+npm test
+
+# Commit and push
+git commit -m "Add: new feature"
+git push origin feature/new-feature
+```
+
+### 2. Testing
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run specific test
+npm test -- --grep "component name"
+```
+
+### 3. Production Build
+```bash
+# Test production build locally
+npm run build
+npm run preview
+
+# Deploy to staging
+vercel
+
+# Deploy to production
+vercel --prod
+```
+
+## 🚨 Common Issues
+
+### Port Already in Use
+```bash
+# Kill process on port 3000
+npx kill-port 3000
+
+# Use different port
+PORT=3001 npm run dev
+```
+
+### Environment Variables Not Loading
+```bash
+# Check file exists
+ls -la .env.local
+
+# Restart development server
 npm run dev
 ```
 
-### Frontend
+### Build Errors
 ```bash
-# Raíz del proyecto
+# Clear cache and rebuild
+rm -rf node_modules dist .next
 npm install
-npm run dev
+npm run build
 ```
 
-## 📝 Tareas Pendientes Críticas
-
-### 🔴 URGENTE (Hacer antes de producción)
-1. **Implementar autenticación real** - El código base está listo en `backend/src`
-2. **Mover Gemini API al backend** - NUNCA exponer en cliente
-3. **Integrar Stripe real** - Reemplazar simulación actual
-4. **Configurar HTTPS** - Certificado SSL obligatorio
-
-### 🟡 IMPORTANTE
-1. Migrar completamente a Vite (eliminar react-scripts)
-2. Implementar tests (mínimo 70% cobertura)
-3. Configurar CI/CD pipeline
-4. Optimizar bundle del frontend
-
-## 🔐 Seguridad Inmediata
-
+### Database Connection Issues
 ```bash
-# Generar secrets seguros
-openssl rand -base64 32  # Para JWT_SECRET
-openssl rand -base64 32  # Para SESSION_SECRET
-
-# NUNCA commitear .env real
-echo ".env" >> .gitignore
+# Test Supabase connection
+curl -H "apikey: YOUR_KEY" \
+     https://your-project.supabase.co/rest/v1/cards
 ```
 
-## 📦 Estructura Creada
+## 📚 Next Steps
 
-```
-Indi Final/
-├── backend/               # ✅ API Node.js/Express
-│   ├── src/
-│   │   ├── server.ts     # ✅ Servidor con seguridad
-│   │   └── database/
-│   │       └── schema.sql # ✅ BD completa
-│   ├── Dockerfile        # ✅ Listo para producción
-│   └── package.json      # ✅ Dependencias completas
-├── docker-compose.yml    # ✅ Stack completo
-├── .env.example         # ✅ Template seguro
-├── PLAN_PRODUCCION.md   # ✅ Plan detallado
-└── QUICK_START.md       # ✅ Esta guía
-```
+1. **Customize Design** - Update themes in `components/`
+2. **Add Features** - Extend functionality in `App.tsx`
+3. **Configure Analytics** - Set up tracking in `constants.ts`
+4. **Deploy** - Follow deployment guide in `DEPLOYMENT.md`
+5. **Monitor** - Set up production monitoring
 
-## 💡 Comandos Útiles
+## 🎉 You're All Set!
 
-```bash
-# Reiniciar servicios
-docker-compose restart
+Your INDI Digital Cards platform is ready for development and deployment. Check out:
 
-# Ver logs de un servicio
-docker-compose logs -f backend
-
-# Ejecutar migraciones
-docker-compose exec backend npm run migrate
-
-# Acceder a PostgreSQL
-docker-compose exec postgres psql -U indi_user -d indi_db
-
-# Limpiar todo
-docker-compose down -v
-```
-
-## ⚠️ NO SUBIR A PRODUCCIÓN SIN:
-- [ ] Autenticación real implementada
-- [ ] API Keys movidas al backend
-- [ ] Stripe configurado
-- [ ] Tests pasando
-- [ ] HTTPS configurado
-- [ ] Variables de producción configuradas
+- 📖 **Full Documentation**: `README.md`
+- 🚀 **Deployment Guide**: `DEPLOYMENT.md`
+- 💡 **Best Practices**: Follow the project structure
 
 ---
 
-**¿Necesitas ayuda?** Revisa `PLAN_PRODUCCION.md` para el plan completo.
+**Happy coding! 🚀**
