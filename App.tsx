@@ -34,7 +34,7 @@ function AppContent() {
   const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Derived State
-  const activeCard = cards.find(c => c.id === selectedCardId) || createNewCardTemplate();
+  const activeCard = cards.find(c => c.id === selectedCardId) || null;
   const t = translations[language].nav;
 
   // --- EFFECTS ---
@@ -68,13 +68,8 @@ function AppContent() {
     if (!authLoading) {
       if (isAuthenticated && (currentView === 'landing' || currentView === 'auth')) {
         console.log('🔄 User authenticated, redirecting to dashboard');
-        const storedCards = getStoredCards();
-        if (storedCards.length > 0) {
-          setCurrentView('dashboard');
-        } else {
-          // Create first card flow
-          handleCreateCard();
-        }
+        // Always go to dashboard, don't create cards automatically
+        setCurrentView('dashboard');
       } else if (!isAuthenticated && (currentView === 'dashboard' || currentView === 'editor')) {
         console.log('🔄 User not authenticated, redirecting to landing');
         setCurrentView('landing');
@@ -86,14 +81,8 @@ function AppContent() {
   const handleLoginSuccess = (user: any) => {
     console.log('✅ Login successful:', user);
 
-    // Determine where to send them
-    const storedCards = getStoredCards();
-    if (storedCards.length > 0) {
-      setCurrentView('dashboard');
-    } else {
-      // Create first card flow
-      handleCreateCard();
-    }
+    // Always go to dashboard after login
+    setCurrentView('dashboard');
   };
 
   const handleLogout = async () => {
@@ -150,7 +139,8 @@ function AppContent() {
     if (!selectedCardId && cards.length > 0) {
         setSelectedCardId(cards[0].id);
     } else if (cards.length === 0) {
-        handleCreateCard();
+        // No cards available, show message or stay in dashboard
+        console.log('No cards available to edit. User must create one first.');
         return;
     }
     setCurrentView('editor');
@@ -164,6 +154,10 @@ function AppContent() {
   };
 
   const handlePublish = () => {
+    if (!activeCard) {
+      console.error('No active card to publish');
+      return;
+    }
     setIsPublishing(true);
     setTimeout(() => {
       setIsPublishing(false);
@@ -222,7 +216,7 @@ function AppContent() {
 
   // --- APP SHELL (Navbar + Content) ---
   // Theme color for particles
-  const themeColor = activeCard.themeConfig?.brandColor || '#10b981';
+  const themeColor = activeCard?.themeConfig?.brandColor || '#10b981';
   // Determine if we should show logged-in navigation
   const showAppNav = isAuthenticated && ['dashboard', 'editor'].includes(currentView);
 
@@ -315,26 +309,43 @@ function AppContent() {
         )}
 
         {currentView === 'editor' && (
-          <div className="flex flex-col md:flex-row gap-8 h-full max-w-[1600px] mx-auto w-full animate-slide-up">
-            <div className="flex-1 min-w-0 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center md:hidden">
-                  <h2 className="text-sm font-semibold text-white">Editor</h2>
-                  <button onClick={() => setShowMobilePreview(true)} className="flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded-full text-xs border border-emerald-600/30">
-                    <Eye size={12} /> Preview
-                  </button>
+          <>
+            {activeCard ? (
+              <div className="flex flex-col md:flex-row gap-8 h-full max-w-[1600px] mx-auto w-full animate-slide-up">
+                <div className="flex-1 min-w-0 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                  <div className="p-4 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center md:hidden">
+                      <h2 className="text-sm font-semibold text-white">Editor</h2>
+                      <button onClick={() => setShowMobilePreview(true)} className="flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded-full text-xs border border-emerald-600/30">
+                        <Eye size={12} /> Preview
+                      </button>
+                  </div>
+                  <CardEditor
+                    card={activeCard}
+                    setCard={(updater) => { const updated = typeof updater === 'function' ? updater(activeCard) : updater; handleSaveCard(updated); }}
+                    onPublish={handlePublish}
+                    isPublishing={isPublishing}
+                    language={language}
+                  />
+                </div>
+                <div className="flex-1 hidden lg:flex items-center justify-center bg-slate-900/30 rounded-2xl border border-slate-800/50">
+                  <CardPreview card={activeCard} scale={1.0} mode="preview" language={language} />
+                </div>
               </div>
-              <CardEditor 
-                card={activeCard} 
-                setCard={(updater) => { const updated = typeof updater === 'function' ? updater(activeCard) : updater; handleSaveCard(updated); }}
-                onPublish={handlePublish}
-                isPublishing={isPublishing}
-                language={language}
-              />
-            </div>
-            <div className="flex-1 hidden lg:flex items-center justify-center bg-slate-900/30 rounded-2xl border border-slate-800/50">
-              <CardPreview card={activeCard} scale={1.0} mode="preview" language={language} />
-            </div>
-          </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-12 max-w-md">
+                  <h2 className="text-xl font-semibold text-white mb-4">No hay tarjetas para editar</h2>
+                  <p className="text-slate-400 mb-6">Crea tu primera tarjeta digital para comenzar</p>
+                  <button
+                    onClick={handleCreateCard}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    Crear Mi Primera Tarjeta
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {currentView === 'dashboard' && (
@@ -345,14 +356,14 @@ function AppContent() {
       </main>
 
       {/* MODALS & OVERLAYS */}
-      {showMobilePreview && currentView === 'editor' && (
+      {showMobilePreview && currentView === 'editor' && activeCard && (
         <div className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 lg:hidden">
           <div className="absolute top-4 right-4 z-50"><button onClick={() => setShowMobilePreview(false)} className="p-3 bg-slate-800 rounded-full text-white border border-slate-700"><X size={24} /></button></div>
           <div className="scale-[0.85]"><CardPreview card={activeCard} mode="preview" language={language} /></div>
         </div>
       )}
 
-      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={activeCard.publishedUrl || ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
+      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={activeCard?.publishedUrl || ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
 
     </div>
