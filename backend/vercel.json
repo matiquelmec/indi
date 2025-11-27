@@ -3,7 +3,7 @@
   "name": "indi-backend",
   "functions": {
     "api/index.ts": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs22.x"
     }
   },
   "rewrites": [
