@@ -123,7 +123,7 @@ app.get('/api/cards', async (req: Request, res: Response) => {
     res.json(cards || []);
   } catch (error) {
     console.error('Cards error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -144,7 +144,7 @@ app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response)
       return res.status(500).json({ error: 'Error fetching cards' });
     }
 
-    const cardIds = cards?.map(card => card.id) || [];
+    const cardIds = cards?.map((card: any) => card.id) || [];
 
     if (cardIds.length === 0) {
       return res.json({
@@ -177,17 +177,17 @@ app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response)
     }
 
     // Calculate metrics
-    const totalViews = analytics?.filter(a => a.event_type === 'view').length || 0;
-    const totalContacts = analytics?.filter(a => a.event_type === 'contact_save').length || 0;
-    const totalSocial = analytics?.filter(a => a.event_type === 'social_click').length || 0;
+    const totalViews = analytics?.filter((a: any) => a.event_type === 'view').length || 0;
+    const totalContacts = analytics?.filter((a: any) => a.event_type === 'contact_save').length || 0;
+    const totalSocial = analytics?.filter((a: any) => a.event_type === 'social_click').length || 0;
 
     const today = new Date().toISOString().split('T')[0];
-    const todayViews = analytics?.filter(a =>
+    const todayViews = analytics?.filter((a: any) =>
       a.event_type === 'view' &&
       a.created_at.startsWith(today)
     ).length || 0;
 
-    const todayContacts = analytics?.filter(a =>
+    const todayContacts = analytics?.filter((a: any) =>
       a.event_type === 'contact_save' &&
       a.created_at.startsWith(today)
     ).length || 0;
@@ -252,17 +252,17 @@ app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
     }
 
     // Calculate metrics for this card
-    const totalViews = analytics?.filter(a => a.event_type === 'view').length || 0;
-    const totalContacts = analytics?.filter(a => a.event_type === 'contact_save').length || 0;
-    const totalSocial = analytics?.filter(a => a.event_type === 'social_click').length || 0;
+    const totalViews = analytics?.filter((a: any) => a.event_type === 'view').length || 0;
+    const totalContacts = analytics?.filter((a: any) => a.event_type === 'contact_save').length || 0;
+    const totalSocial = analytics?.filter((a: any) => a.event_type === 'social_click').length || 0;
 
     const today = new Date().toISOString().split('T')[0];
-    const todayViews = analytics?.filter(a =>
+    const todayViews = analytics?.filter((a: any) =>
       a.event_type === 'view' &&
       a.created_at.startsWith(today)
     ).length || 0;
 
-    const todayContacts = analytics?.filter(a =>
+    const todayContacts = analytics?.filter((a: any) =>
       a.event_type === 'contact_save' &&
       a.created_at.startsWith(today)
     ).length || 0;
