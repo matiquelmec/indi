@@ -4,6 +4,23 @@ const helmet = require('helmet');
 const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
 
+// Type definitions for Express
+interface Request {
+  body: any;
+  params: any;
+  query: any;
+  headers: any;
+  ip: string;
+  method: string;
+  path: string;
+}
+
+interface Response {
+  json: (data: any) => Response;
+  status: (code: number) => Response;
+  send: (data: any) => Response;
+}
+
 // Load environment variables
 dotenv.config({ path: '../.env.development' });
 
@@ -35,7 +52,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Basic routes
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -45,7 +62,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mock auth endpoints
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -66,7 +83,7 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', (req: Request, res: Response) => {
   const { email, password, firstName, lastName } = req.body;
 
   if (!email || !password || !firstName || !lastName) {
@@ -88,7 +105,7 @@ app.post('/api/auth/register', (req, res) => {
 });
 
 // Real cards endpoint
-app.get('/api/cards', async (req, res) => {
+app.get('/api/cards', async (req: Request, res: Response) => {
   try {
     // Get current user from auth (simplified for demo)
     const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
@@ -111,7 +128,7 @@ app.get('/api/cards', async (req, res) => {
 });
 
 // Real Analytics from Supabase - Global Overview
-app.get('/api/analytics/dashboard/overview', async (req, res) => {
+app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response) => {
   try {
     // Get current user from auth (simplified for demo)
     const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
@@ -201,7 +218,7 @@ app.get('/api/analytics/dashboard/overview', async (req, res) => {
 });
 
 // Individual Card Analytics
-app.get('/api/analytics/card/:cardId', async (req, res) => {
+app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
   try {
     const { cardId } = req.params;
     const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
@@ -300,7 +317,7 @@ app.get('/api/analytics/card/:cardId', async (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
@@ -309,7 +326,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handler
-app.use((error: any, req: any, res: any, next: any) => {
+app.use((error: any, req: Request, res: Response, next: any) => {
   console.error('Error:', error);
   res.status(500).json({
     error: 'Internal Server Error',
