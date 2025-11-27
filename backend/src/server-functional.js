@@ -10,6 +10,28 @@ const {
   generateSlug,
   generatePublishedUrl
 } = require('./utils/cardMappers');
+const { 
+  authenticateToken, 
+  optionalAuth, 
+  demoAuth, 
+  generateToken 
+} = require('./middleware/auth');
+const {
+  hashPassword,
+  comparePassword,
+  validatePassword
+} = require('./utils/passwordUtils');
+const {
+  globalRateLimit,
+  authRateLimit,
+  apiRateLimit,
+  publicRateLimit,
+  speedLimiter,
+  cardCreationRateLimit,
+  analyticsRateLimit,
+  trustedBypass,
+  rateLimitErrorHandler
+} = require('./middleware/rateLimiting');
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
@@ -35,6 +57,14 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+// Trust proxy for rate limiting (important for production)
+app.set('trust proxy', 1);
+
+// Rate limiting middleware
+app.use(trustedBypass); // Check for bypass before applying limits
+app.use(globalRateLimit); // Apply global rate limiting
+app.use(speedLimiter); // Progressive slowdown
+
 // Disable cache in development
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -53,16 +83,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mock auth - simplified
-app.post('/api/auth/register', async (req, res) => {
+// Secure Authentication with real JWT
+app.post('/api/auth/register', authRateLimit, async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
 
   try {
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ 
+        error: 'Password does not meet security requirements',
+        details: passwordValidation.errors
+      });
+    }
+
+    // Hash password securely with bcrypt
+    const hashedPassword = await hashPassword(password);
+
+    // Create new user with secure password hash
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
         email,
-        password_hash: 'mock_hash',
+        password_hash: hashedPassword,
         first_name: firstName,
         last_name: lastName
       })
@@ -70,8 +124,13 @@ app.post('/api/auth/register', async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(409).json({ error: 'Email already exists' });
+      console.error('User creation error:', error);
+      return res.status(500).json({ error: 'Failed to create user' });
     }
+
+    // Generate real JWT token
+    const token = generateToken(newUser.id);
+    const refreshToken = generateToken(newUser.id, '7d');
 
     res.status(201).json({
       message: 'User created successfully',
@@ -81,7 +140,8 @@ app.post('/api/auth/register', async (req, res) => {
         firstName: newUser.first_name,
         lastName: newUser.last_name
       },
-      token: 'mock-jwt-token'
+      token,
+      refreshToken
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -89,7 +149,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authRateLimit, async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -100,8 +160,19 @@ app.post('/api/auth/login', async (req, res) => {
       .single();
 
     if (error || !user) {
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    // Compare password using bcrypt
+    const passwordMatch = await comparePassword(password, user.password_hash);
+    
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate real JWT tokens
+    const token = generateToken(user.id);
+    const refreshToken = generateToken(user.id, '7d');
 
     res.json({
       message: 'Login successful',
@@ -111,7 +182,8 @@ app.post('/api/auth/login', async (req, res) => {
         firstName: user.first_name,
         lastName: user.last_name
       },
-      token: 'mock-jwt-token'
+      token,
+      refreshToken
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -119,11 +191,11 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Cards endpoints - REAL DATA with full schema support
-app.get('/api/cards', async (req, res) => {
+// Cards endpoints - SECURED with authentication
+app.get('/api/cards', apiRateLimit, demoAuth, async (req, res) => {
   try {
-    // Get current user from auth (simplified for demo)
-    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+    // Get current user from authenticated request
+    const userId = req.user.id;
 
     const { data: cards, error } = await supabase
       .from('cards')
@@ -146,12 +218,12 @@ app.get('/api/cards', async (req, res) => {
   }
 });
 
-app.post('/api/cards', async (req, res) => {
+app.post('/api/cards', cardCreationRateLimit, demoAuth, async (req, res) => {
   try {
     console.log('Creating card with data:', req.body);
 
-    // Use shared mapper for consistent data transformation
-    const userId = req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user
+    // Use authenticated user ID
+    const userId = req.user.id;
     const cardData = mapCardToDatabase(req.body, userId);
 
     // Generate slug and published URL if creating a published card
@@ -182,7 +254,7 @@ app.post('/api/cards', async (req, res) => {
   }
 });
 
-app.put('/api/cards/:id', async (req, res) => {
+app.put('/api/cards/:id', apiRateLimit, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -226,7 +298,7 @@ app.put('/api/cards/:id', async (req, res) => {
   }
 });
 
-app.get('/api/cards/:id/public', async (req, res) => {
+app.get('/api/cards/:id/public', publicRateLimit, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -335,7 +407,7 @@ app.get('/api/analytics/individual/:cardId', async (req, res) => {
 });
 
 // Track analytics event
-app.post('/api/analytics/track', async (req, res) => {
+app.post('/api/analytics/track', analyticsRateLimit, async (req, res) => {
   try {
     const { cardId, eventType, metadata } = req.body;
 
@@ -358,7 +430,7 @@ app.post('/api/analytics/track', async (req, res) => {
 });
 
 // Weekly performance endpoint - REAL DATA
-app.get('/api/analytics/weekly-performance', async (req, res) => {
+app.get('/api/analytics/weekly-performance', publicRateLimit, async (req, res) => {
   try {
     // Get all analytics events from the last 7 days
     const { data: analyticsEvents } = await supabase
@@ -452,10 +524,10 @@ app.get('/api/analytics/weekly-performance', async (req, res) => {
 });
 
 // Delete existing card
-app.delete('/api/cards/:id', async (req, res) => {
+app.delete('/api/cards/:id', apiRateLimit, demoAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+    const userId = req.user.id; // From authenticated request
 
     if (!id) {
       return res.status(400).json({ error: 'Card ID is required' });
@@ -497,6 +569,9 @@ app.delete('/api/cards/:id', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Error handling middleware (must be last)
+app.use(rateLimitErrorHandler);
 
 // Start server
 app.listen(PORT, () => {
