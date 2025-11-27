@@ -104,7 +104,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onLoginSuccess }) => {
                  setLocalLoading(true);
                  setError('');
                  try {
-                   const result = await signIn('demo@example.com', 'demo123');
+                   const result = await signIn('demo@indi.com', 'demo123');
                    if (result.success) {
                      onLoginSuccess(result.user);
                    } else {
