@@ -1,8 +1,8 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const dotenv = require('dotenv');
+const { createClient } = require('@supabase/supabase-js');
 
 // Load environment variables
 dotenv.config({ path: '../.env.development' });
@@ -35,7 +35,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Basic routes
-app.get('/api/health', (req, res): any => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -111,7 +111,7 @@ app.get('/api/cards', async (req, res) => {
 });
 
 // Real Analytics from Supabase - Global Overview
-app.get('/api/analytics/dashboard/overview', async (req, res): Promise<any> => {
+app.get('/api/analytics/dashboard/overview', async (req, res) => {
   try {
     // Get current user from auth (simplified for demo)
     const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
@@ -196,12 +196,12 @@ app.get('/api/analytics/dashboard/overview', async (req, res): Promise<any> => {
 
   } catch (error) {
     console.error('Analytics error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Individual Card Analytics
-app.get('/api/analytics/card/:cardId', async (req, res): Promise<any> => {
+app.get('/api/analytics/card/:cardId', async (req, res) => {
   try {
     const { cardId } = req.params;
     const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
@@ -295,7 +295,7 @@ app.get('/api/analytics/card/:cardId', async (req, res): Promise<any> => {
 
   } catch (error) {
     console.error('Individual analytics error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 

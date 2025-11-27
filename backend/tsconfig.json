@@ -22,7 +22,8 @@
     "noUnusedParameters": false
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "api/**/*"
   ],
   "exclude": [
     "node_modules",

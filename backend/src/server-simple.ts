@@ -264,7 +264,7 @@ app.get('/api/analytics/cards/:cardId/detailed', async (req, res): Promise<any> 
 });
 
 // Public card endpoint (for sharing)
-app.get('/api/cards/:cardId/public', async (req, res) => {
+app.get('/api/cards/:cardId/public', async (req, res): Promise<any> => {
   try {
     const { cardId } = req.params;
 
