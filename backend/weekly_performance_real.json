@@ -1,0 +1,163 @@
+{
+  "period": "Current Week",
+  "startDate": "2025-11-24",
+  "endDate": "2025-11-30",
+  "weeklyTotals": {
+    "totalViews": 21,
+    "totalContacts": 21,
+    "totalSocial": 13,
+    "totalEvents": 55,
+    "avgPerformance": 31
+  },
+  "peakDay": {
+    "name": "Jue",
+    "date": "27/11",
+    "events": 17,
+    "performance": 68
+  },
+  "dailyBreakdown": [
+    {
+      "day": "Lun",
+      "fullDate": "2025-11-24",
+      "date": 24,
+      "month": 11,
+      "views": 3,
+      "contacts": 7,
+      "social": 1,
+      "total": 11,
+      "performanceScore": 44,
+      "isToday": false
+    },
+    {
+      "day": "Mar",
+      "fullDate": "2025-11-25",
+      "date": 25,
+      "month": 11,
+      "views": 7,
+      "contacts": 5,
+      "social": 3,
+      "total": 15,
+      "performanceScore": 60,
+      "isToday": false
+    },
+    {
+      "day": "Mié",
+      "fullDate": "2025-11-26",
+      "date": 26,
+      "month": 11,
+      "views": 4,
+      "contacts": 3,
+      "social": 5,
+      "total": 12,
+      "performanceScore": 48,
+      "isToday": false
+    },
+    {
+      "day": "Jue",
+      "fullDate": "2025-11-27",
+      "date": 27,
+      "month": 11,
+      "views": 7,
+      "contacts": 6,
+      "social": 4,
+      "total": 17,
+      "performanceScore": 68,
+      "isToday": true
+    },
+    {
+      "day": "Vie",
+      "fullDate": "2025-11-28",
+      "date": 28,
+      "month": 11,
+      "views": 0,
+      "contacts": 0,
+      "social": 0,
+      "total": 0,
+      "performanceScore": 0,
+      "isToday": false
+    },
+    {
+      "day": "Sáb",
+      "fullDate": "2025-11-29",
+      "date": 29,
+      "month": 11,
+      "views": 0,
+      "contacts": 0,
+      "social": 0,
+      "total": 0,
+      "performanceScore": 0,
+      "isToday": false
+    },
+    {
+      "day": "Dom",
+      "fullDate": "2025-11-30",
+      "date": 30,
+      "month": 11,
+      "views": 0,
+      "contacts": 0,
+      "social": 0,
+      "total": 0,
+      "performanceScore": 0,
+      "isToday": false
+    }
+  ],
+  "chartData": [
+    {
+      "name": "Lun",
+      "performance": 44,
+      "events": 11,
+      "views": 3,
+      "contacts": 7,
+      "tooltip": "Lun 24/11: 11 eventos"
+    },
+    {
+      "name": "Mar",
+      "performance": 60,
+      "events": 15,
+      "views": 7,
+      "contacts": 5,
+      "tooltip": "Mar 25/11: 15 eventos"
+    },
+    {
+      "name": "Mié",
+      "performance": 48,
+      "events": 12,
+      "views": 4,
+      "contacts": 3,
+      "tooltip": "Mié 26/11: 12 eventos"
+    },
+    {
+      "name": "Jue",
+      "performance": 68,
+      "events": 17,
+      "views": 7,
+      "contacts": 6,
+      "tooltip": "Jue 27/11: 17 eventos"
+    },
+    {
+      "name": "Vie",
+      "performance": 0,
+      "events": 0,
+      "views": 0,
+      "contacts": 0,
+      "tooltip": "Vie 28/11: 0 eventos"
+    },
+    {
+      "name": "Sáb",
+      "performance": 0,
+      "events": 0,
+      "views": 0,
+      "contacts": 0,
+      "tooltip": "Sáb 29/11: 0 eventos"
+    },
+    {
+      "name": "Dom",
+      "performance": 0,
+      "events": 0,
+      "views": 0,
+      "contacts": 0,
+      "tooltip": "Dom 30/11: 0 eventos"
+    }
+  ],
+  "lastUpdated": "2025-11-27T23:05:54.417Z"
+}

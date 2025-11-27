@@ -1,20 +1,19 @@
-import React from 'react';
-import { DigitalCard, Language } from '../../types';
-import { 
-  Plus, 
-  MoreVertical, 
-  Edit3, 
-  Eye, 
-  Trash2, 
-  Globe, 
-  Clock, 
+import React, { useState, useEffect } from 'react';
+import { DigitalCard, Language, AnalyticsData } from '../../types';
+import {
+  Plus,
+  MoreVertical,
+  Edit3,
+  Eye,
+  Trash2,
+  Globe,
+  Clock,
   BarChart3,
   CreditCard,
   Crown,
   AlertTriangle
 } from 'lucide-react';
 import Analytics from './Analytics';
-import { MOCK_ANALYTICS } from '../../constants';
 import { translations } from '../../lib/i18n';
 
 interface DashboardProps {
@@ -45,6 +44,63 @@ const Dashboard: React.FC<DashboardProps> = ({
   onAnalyticsCardSelect
 }) => {
   const t = translations[language].dashboard;
+  const [weeklyData, setWeeklyData] = useState<AnalyticsData[]>([]);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
+
+  // Fetch real weekly performance data
+  useEffect(() => {
+    const fetchWeeklyPerformance = async () => {
+      setIsLoadingAnalytics(true);
+      try {
+        const response = await fetch('http://localhost:5006/api/analytics/weekly-performance');
+        if (response.ok) {
+          const data = await response.json();
+
+          // Transform the API data to match AnalyticsData[] format
+          const transformedData: AnalyticsData[] = data.chartData.map((day: any) => {
+            // Map Spanish day names to English abbreviations
+            const dayMapping: { [key: string]: string } = {
+              'Lun': 'Mon',
+              'Mar': 'Tue',
+              'Mié': 'Wed',
+              'Jue': 'Thu',
+              'Vie': 'Fri',
+              'Sáb': 'Sat',
+              'Dom': 'Sun'
+            };
+
+            return {
+              date: dayMapping[day.name] || day.name,
+              views: day.views || 0,
+              clicks: day.social || 0, // Map social clicks to clicks
+              contacts: day.contacts || 0
+            };
+          });
+
+          setWeeklyData(transformedData);
+          console.log('✅ Real weekly performance data loaded:', transformedData);
+        } else {
+          throw new Error('Failed to fetch weekly performance');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching weekly performance:', error);
+        // Fallback to default data on error
+        setWeeklyData([
+          { date: 'Mon', views: 0, clicks: 0, contacts: 0 },
+          { date: 'Tue', views: 0, clicks: 0, contacts: 0 },
+          { date: 'Wed', views: 0, clicks: 0, contacts: 0 },
+          { date: 'Thu', views: 0, clicks: 0, contacts: 0 },
+          { date: 'Fri', views: 0, clicks: 0, contacts: 0 },
+          { date: 'Sat', views: 0, clicks: 0, contacts: 0 },
+          { date: 'Sun', views: 0, clicks: 0, contacts: 0 }
+        ]);
+      } finally {
+        setIsLoadingAnalytics(false);
+      }
+    };
+
+    fetchWeeklyPerformance();
+  }, []);
   
   return (
     <div className="w-full max-w-6xl mx-auto space-y-10 animate-fade-in pb-20">
@@ -118,15 +174,25 @@ const Dashboard: React.FC<DashboardProps> = ({
            <BarChart3 className="text-blue-400" size={24} />
            {t.performance}
         </h2>
-        <Analytics
-          data={MOCK_ANALYTICS}
-          language={language}
-          analyticsMode={analyticsMode}
-          onAnalyticsModeChange={onAnalyticsModeChange}
-          selectedAnalyticsCardId={selectedAnalyticsCardId}
-          onAnalyticsCardSelect={onAnalyticsCardSelect}
-          cards={cards}
-        />
+        {isLoadingAnalytics ? (
+          <div className="bg-slate-900/50 border border-slate-700 rounded-3xl p-8 text-center">
+            <div className="animate-pulse">
+              <div className="h-4 bg-slate-700 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-32 bg-slate-700 rounded"></div>
+            </div>
+            <p className="text-slate-400 mt-4">Cargando métricas reales...</p>
+          </div>
+        ) : (
+          <Analytics
+            data={weeklyData}
+            language={language}
+            analyticsMode={analyticsMode}
+            onAnalyticsModeChange={onAnalyticsModeChange}
+            selectedAnalyticsCardId={selectedAnalyticsCardId}
+            onAnalyticsCardSelect={onAnalyticsCardSelect}
+            cards={cards}
+          />
+        )}
       </div>
     </div>
   );

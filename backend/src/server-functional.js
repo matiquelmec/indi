@@ -357,6 +357,100 @@ app.post('/api/analytics/track', async (req, res) => {
   }
 });
 
+// Weekly performance endpoint - REAL DATA
+app.get('/api/analytics/weekly-performance', async (req, res) => {
+  try {
+    // Get all analytics events from the last 7 days
+    const { data: analyticsEvents } = await supabase
+      .from('analytics_events')
+      .select('*')
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: true });
+
+    // Get current week dates (starting from Monday)
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+
+    // Generate week days (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
+    const weekDays = [];
+    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      weekDays.push({
+        dayName: dayNames[i],
+        fullDate: date.toISOString().split('T')[0],
+        date: date.getDate(),
+        month: date.getMonth() + 1,
+        isToday: date.toDateString() === today.toDateString()
+      });
+    }
+
+    // Process events by day
+    const weeklyPerformance = weekDays.map(day => {
+      const dayEvents = analyticsEvents.filter(event => {
+        const eventDate = new Date(event.created_at).toISOString().split('T')[0];
+        return eventDate === day.fullDate;
+      });
+
+      const views = dayEvents.filter(e => e.event_type === 'view').length;
+      const contacts = dayEvents.filter(e => e.event_type === 'contact_save').length;
+      const social = dayEvents.filter(e => e.event_type === 'social_click').length;
+      const total = views + contacts + social;
+
+      // Calculate performance score (0-100 based on activity)
+      const maxExpected = 25; // Expected max events per day
+      const performanceScore = Math.min(100, Math.round((total / maxExpected) * 100));
+
+      return {
+        name: day.dayName,
+        performance: performanceScore,
+        events: total,
+        views,
+        contacts,
+        social,
+        fullDate: day.fullDate,
+        isToday: day.isToday,
+        tooltip: `${day.dayName} ${day.date}/${day.month}: ${total} eventos`
+      };
+    });
+
+    // Calculate weekly totals
+    const weeklyTotals = {
+      totalViews: weeklyPerformance.reduce((sum, day) => sum + day.views, 0),
+      totalContacts: weeklyPerformance.reduce((sum, day) => sum + day.contacts, 0),
+      totalSocial: weeklyPerformance.reduce((sum, day) => sum + day.social, 0),
+      totalEvents: weeklyPerformance.reduce((sum, day) => sum + day.events, 0),
+      avgPerformance: Math.round(weeklyPerformance.reduce((sum, day) => sum + day.performance, 0) / 7)
+    };
+
+    // Find peak day
+    const peakDay = weeklyPerformance.reduce((peak, day) =>
+      day.events > peak.events ? day : peak
+    );
+
+    res.json({
+      period: 'Current Week',
+      startDate: weekDays[0].fullDate,
+      endDate: weekDays[6].fullDate,
+      weeklyTotals,
+      peakDay: {
+        name: peakDay.name,
+        events: peakDay.events,
+        performance: peakDay.performance
+      },
+      chartData: weeklyPerformance,
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Weekly performance error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Delete existing card
 app.delete('/api/cards/:id', async (req, res) => {
   try {
