@@ -108,7 +108,7 @@ app.post('/api/auth/register', (req: Request, res: Response) => {
 app.get('/api/cards', async (req: Request, res: Response) => {
   try {
     // Get current user from auth (simplified for demo)
-    const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
+    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
 
     const { data: cards, error } = await supabase
       .from('cards')
@@ -132,7 +132,7 @@ app.post('/api/cards', async (req: Request, res: Response) => {
   try {
     // Map frontend camelCase to database snake_case
     const cardData = {
-      user_id: req.body.userId || 'a626f7d9-9582-43be-a569-afc3aadac3db',
+      user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
       first_name: req.body.firstName,
       last_name: req.body.lastName,
       title: req.body.title,
@@ -191,6 +191,34 @@ app.post('/api/cards', async (req: Request, res: Response) => {
   }
 });
 
+// Get public card by ID (for sharing)
+app.get('/api/cards/:id/public', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Card ID is required' });
+    }
+
+    const { data: card, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', id)
+      .eq('is_published', true)
+      .single();
+
+    if (error || !card) {
+      console.error('Public card not found:', error);
+      return res.status(404).json({ error: 'Card not found or not public' });
+    }
+
+    return res.json(card);
+  } catch (error) {
+    console.error('Public card error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Update existing card
 app.put('/api/cards/:id', async (req: Request, res: Response) => {
   try {
@@ -198,7 +226,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
 
     // Map frontend camelCase to database snake_case
     const cardData = {
-      user_id: req.body.userId || 'a626f7d9-9582-43be-a569-afc3aadac3db',
+      user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
       first_name: req.body.firstName,
       last_name: req.body.lastName,
       title: req.body.title,
@@ -266,7 +294,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
 app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response) => {
   try {
     // Get current user from auth (simplified for demo)
-    const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
+    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
 
     // Get user's cards
     const { data: cards, error: cardsError } = await supabase
@@ -356,7 +384,7 @@ app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response)
 app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
   try {
     const { cardId } = req.params;
-    const userId = 'a626f7d9-9582-43be-a569-afc3aadac3db'; // Demo user ID
+    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
 
     if (!cardId) {
       return res.status(400).json({ error: 'Card ID is required' });
