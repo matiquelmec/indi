@@ -1,6 +1,15 @@
 import { DigitalCard } from '../types';
 import { INITIAL_CARD } from '../constants';
 
+// Generate a proper UUID v4
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 // Changed key to force load of new default psychologist data
 const STORAGE_KEY = 'indi_cards_v2_psy';
 
@@ -57,13 +66,13 @@ export const deleteCardFromStorage = (cardId: string): DigitalCard[] => {
 };
 
 export const createNewCardTemplate = (): DigitalCard => {
-  const timestamp = Date.now().toString();
+  const uuid = generateUUID();
   // Robust implementation:
   // We strictly spread INITIAL_CARD to ensure all fields (Bio, Photo, Links) are populated
   // and only override the ID and publication status.
   return {
     ...INITIAL_CARD,
-    id: timestamp,
+    id: uuid,
     isPublished: false,
     publishedUrl: undefined,
     // Business Logic: New cards start with a 7-day trial

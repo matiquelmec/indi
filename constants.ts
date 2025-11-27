@@ -147,7 +147,7 @@ export const PRESET_THEMES: { id: string; name: string; config: CustomThemeConfi
 ];
 
 export const INITIAL_CARD: DigitalCard = {
-  id: '1',
+  id: '550e8400-e29b-41d4-a716-446655440001',
   firstName: 'Elena',
   lastName: 'Castillo',
   title: 'Psicóloga Clínica',

@@ -47,7 +47,7 @@ function AppContent() {
   // Function to fetch card from backend if not found locally
   const fetchCardFromBackend = async (cardId: string) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/cards/${cardId}/public`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardId}/public`);
       if (response.ok) {
         const card = await response.json();
         setCards(prev => [...prev.filter(c => c.id !== cardId), card]);
@@ -67,9 +67,28 @@ function AppContent() {
 
   // --- EFFECTS ---
   useEffect(() => {
-    // Load stored cards data
-    const storedCards = getStoredCards();
-    setCards(storedCards);
+    // Load cards from backend
+    const loadCardsFromBackend = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`);
+        if (response.ok) {
+          const backendCards = await response.json();
+          setCards(backendCards);
+        } else {
+          console.error('Failed to load cards from backend');
+          // Fallback to localStorage only if backend fails
+          const storedCards = getStoredCards();
+          setCards(storedCards);
+        }
+      } catch (error) {
+        console.error('Error loading cards from backend:', error);
+        // Fallback to localStorage if backend is not available
+        const storedCards = getStoredCards();
+        setCards(storedCards);
+      }
+    };
+
+    loadCardsFromBackend();
 
     // Enhanced URL Routing System
     const checkRouting = () => {
@@ -265,11 +284,67 @@ function AppContent() {
   };
 
   // --- EDITOR HANDLERS ---
-  const handleSaveCard = (cardToSave: DigitalCard) => {
+  const handleSaveCard = async (cardToSave: DigitalCard) => {
     setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
-    // Solo guardar en storage si NO es temporal
+
+    // Solo guardar en backend si NO es temporal
     if (!cardToSave.isTemporary) {
-      saveCardToStorage(cardToSave);
+      try {
+        // Check if card exists (for updates vs creation)
+        const existingCard = cards.find(c => c.id === cardToSave.id);
+
+        if (existingCard && !existingCard.isNew && !existingCard.isTemporary) {
+          // Update existing card (PUT) - only if it exists in backend
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardToSave.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(cardToSave)
+          });
+
+          if (!response.ok) {
+            console.error('Failed to update card in backend');
+            // If PUT fails, try POST instead (card might not exist in backend)
+            const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({...cardToSave, isNew: false})
+            });
+
+            if (postResponse.ok) {
+              const savedCard = await postResponse.json();
+              setCards(prev => prev.map(c => c.id === cardToSave.id ? savedCard : c));
+            }
+          }
+        } else {
+          // Create new card (POST)
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({...cardToSave, isNew: false})
+          });
+
+          if (response.ok) {
+            const savedCard = await response.json();
+            // Update local state with backend response
+            setCards(prev => prev.map(c => c.id === cardToSave.id ? savedCard : c));
+          } else {
+            console.error('Failed to save card to backend');
+          }
+        }
+
+        // Also save to localStorage as fallback
+        saveCardToStorage(cardToSave);
+      } catch (error) {
+        console.error('Error saving card:', error);
+        // Fallback to localStorage only
+        saveCardToStorage(cardToSave);
+      }
     }
   };
 
@@ -293,14 +368,8 @@ function AppContent() {
 
       const publishedCard = { ...activeCard, isPublished: true, publishedUrl, isTemporary: false };
 
-      // Si es temporal, guardarlo por primera vez en storage
-      if (activeCard.isTemporary) {
-        const updatedCards = saveCardToStorage(publishedCard);
-        setCards(updatedCards);
-      } else {
-        // Si ya existe, solo actualizarlo
-        handleSaveCard(publishedCard);
-      }
+      // Always save to backend whether it's new or existing
+      handleSaveCard(publishedCard);
 
       setShowShareModal(true);
     }, 1500);

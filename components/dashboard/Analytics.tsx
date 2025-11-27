@@ -55,25 +55,27 @@ const Analytics: React.FC<AnalyticsProps> = ({
       setIsLoading(true);
       try {
         if (analyticsMode === 'global') {
-          const response = await fetch('http://localhost:5001/api/analytics/dashboard/overview');
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/analytics/dashboard/overview`);
           const data = await response.json();
           setAnalytics(data.overview);
         } else if (selectedAnalyticsCardId) {
-          const response = await fetch(`http://localhost:5001/api/analytics/cards/${selectedAnalyticsCardId}/detailed`);
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/analytics/individual/${selectedAnalyticsCardId}`);
           const data = await response.json();
-          setAnalytics(data.metrics);
+          setAnalytics({
+            totalViews: data.totalViews,
+            totalContacts: data.totalContacts,
+            totalSocial: Math.floor(data.totalContacts * 0.6),
+            conversionRate: data.totalViews > 0 ? ((data.totalContacts / data.totalViews) * 100).toFixed(1) : 0
+          });
         }
       } catch (error) {
         console.error('Error loading analytics:', error);
-        // Fallback to mock data calculations
-        const totalViews = data.reduce((acc, curr) => acc + curr.views, 0);
-        const totalClicks = data.reduce((acc, curr) => acc + curr.clicks, 0);
-        const conversionRate = ((totalClicks / totalViews) * 100).toFixed(1);
+        // Set zero values when API fails instead of mock data
         setAnalytics({
-          totalViews,
-          totalContacts: totalClicks,
-          totalSocial: Math.floor(totalClicks * 0.6),
-          conversionRate: parseFloat(conversionRate)
+          totalViews: 0,
+          totalContacts: 0,
+          totalSocial: 0,
+          conversionRate: 0
         });
       }
       setIsLoading(false);
@@ -82,10 +84,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
     loadAnalytics();
   }, [analyticsMode, selectedAnalyticsCardId]);
 
-  // Fallback calculations for backward compatibility
-  const totalViews = analytics?.totalViews || data.reduce((acc, curr) => acc + curr.views, 0);
-  const totalClicks = analytics?.totalContacts || data.reduce((acc, curr) => acc + curr.clicks, 0);
-  const conversionRate = analytics?.conversionRate || ((totalClicks / totalViews) * 100).toFixed(1);
+  // Use analytics data directly, default to 0 if not available
+  const totalViews = analytics?.totalViews || 0;
+  const totalClicks = analytics?.totalContacts || 0;
+  const conversionRate = analytics?.conversionRate || 0;
 
   // Translate the data keys (Days of week) for the chart
   const translatedData = data.map(item => ({

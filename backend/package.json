@@ -4,7 +4,7 @@
   "description": "Backend API for INDI Digital Card Platform",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/server-simple.ts",
+    "dev": "nodemon src/server-functional.js",
     "build": "echo 'Serverless function - no build needed'",
     "start": "node dist/server.js",
     "test": "jest --coverage",

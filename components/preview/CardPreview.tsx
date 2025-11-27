@@ -27,6 +27,11 @@ interface CardPreviewProps {
 }
 
 const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'preview', language = 'es' }) => {
+  // Early return if card is null or undefined
+  if (!card) {
+    return <div>Loading...</div>;
+  }
+
   // Determine configuration (fallback to defaults if partial)
   const config = card.themeConfig || {
     brandColor: '#10b981',

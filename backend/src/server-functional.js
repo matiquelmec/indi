@@ -1,0 +1,429 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: '.env.development' });
+
+const app = express();
+const PORT = process.env.PORT || 5002;
+
+// Initialize Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+// Middleware
+app.use(helmet());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173'],
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+
+// Disable cache in development
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: 'development',
+    database: 'supabase-connected'
+  });
+});
+
+// Mock auth - simplified
+app.post('/api/auth/register', async (req, res) => {
+  const { email, password, firstName, lastName } = req.body;
+
+  try {
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        email,
+        password_hash: 'mock_hash',
+        first_name: firstName,
+        last_name: lastName
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name
+      },
+      token: 'mock-jwt-token'
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name
+      },
+      token: 'mock-jwt-token'
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Cards endpoints - REAL DATA
+app.get('/api/cards', async (req, res) => {
+  try {
+    const { data: cards, error } = await supabase
+      .from('cards')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Map database snake_case to frontend camelCase
+    const mappedCards = (cards || []).map(card => ({
+      id: card.id,
+      userId: card.user_id,
+      firstName: card.first_name,
+      lastName: card.last_name,
+      title: card.title,
+      company: card.company,
+      phone: card.phone,
+      email: card.email,
+      website: card.website,
+      bio: card.bio,
+      avatarUrl: card.avatar_url,
+      coverUrl: card.cover_url,
+      socialLinks: card.social_links,
+      contactFields: card.contact_fields,
+      themeConfig: card.theme_config,
+      isPublished: card.is_published,
+      viewsCount: card.views_count,
+      createdAt: card.created_at,
+      updatedAt: card.updated_at
+    }));
+
+    res.json(mappedCards);
+  } catch (error) {
+    console.error('Cards fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch cards' });
+  }
+});
+
+app.post('/api/cards', async (req, res) => {
+  try {
+    // Map frontend camelCase to database snake_case
+    const cardData = {
+      user_id: req.body.userId || null,
+      first_name: req.body.firstName,
+      last_name: req.body.lastName,
+      title: req.body.title,
+      company: req.body.company,
+      phone: req.body.phone,
+      email: req.body.email,
+      website: req.body.website,
+      bio: req.body.bio,
+      avatar_url: req.body.avatarUrl,
+      cover_url: req.body.coverUrl,
+      social_links: req.body.socialLinks,
+      contact_fields: req.body.contactFields,
+      theme_config: req.body.themeConfig,
+      is_published: req.body.isPublished || false,
+      views_count: 0
+    };
+
+    const { data: newCard, error } = await supabase
+      .from('cards')
+      .insert(cardData)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    // Map database snake_case back to frontend camelCase
+    const responseCard = {
+      id: newCard.id,
+      userId: newCard.user_id,
+      firstName: newCard.first_name,
+      lastName: newCard.last_name,
+      title: newCard.title,
+      company: newCard.company,
+      phone: newCard.phone,
+      email: newCard.email,
+      website: newCard.website,
+      bio: newCard.bio,
+      avatarUrl: newCard.avatar_url,
+      coverUrl: newCard.cover_url,
+      socialLinks: newCard.social_links,
+      contactFields: newCard.contact_fields,
+      themeConfig: newCard.theme_config,
+      isPublished: newCard.is_published,
+      viewsCount: newCard.views_count,
+      createdAt: newCard.created_at,
+      updatedAt: newCard.updated_at
+    };
+
+    res.status(201).json(responseCard);
+  } catch (error) {
+    console.error('Card creation error:', error);
+    res.status(500).json({ error: 'Failed to create card' });
+  }
+});
+
+app.put('/api/cards/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Map frontend camelCase to database snake_case
+    const cardData = {
+      user_id: req.body.userId || null,
+      first_name: req.body.firstName,
+      last_name: req.body.lastName,
+      title: req.body.title,
+      company: req.body.company,
+      phone: req.body.phone,
+      email: req.body.email,
+      website: req.body.website,
+      bio: req.body.bio,
+      avatar_url: req.body.avatarUrl,
+      cover_url: req.body.coverUrl,
+      social_links: req.body.socialLinks,
+      contact_fields: req.body.contactFields,
+      theme_config: req.body.themeConfig,
+      is_published: req.body.isPublished,
+      views_count: req.body.viewsCount || 0
+    };
+
+    const { data: updatedCard, error } = await supabase
+      .from('cards')
+      .update(cardData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!updatedCard) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    // Map database snake_case back to frontend camelCase
+    const responseCard = {
+      id: updatedCard.id,
+      userId: updatedCard.user_id,
+      firstName: updatedCard.first_name,
+      lastName: updatedCard.last_name,
+      title: updatedCard.title,
+      company: updatedCard.company,
+      phone: updatedCard.phone,
+      email: updatedCard.email,
+      website: updatedCard.website,
+      bio: updatedCard.bio,
+      avatarUrl: updatedCard.avatar_url,
+      coverUrl: updatedCard.cover_url,
+      socialLinks: updatedCard.social_links,
+      contactFields: updatedCard.contact_fields,
+      themeConfig: updatedCard.theme_config,
+      isPublished: updatedCard.is_published,
+      viewsCount: updatedCard.views_count,
+      createdAt: updatedCard.created_at,
+      updatedAt: updatedCard.updated_at
+    };
+
+    res.json(responseCard);
+  } catch (error) {
+    console.error('Card update error:', error);
+    res.status(500).json({ error: 'Failed to update card' });
+  }
+});
+
+app.get('/api/cards/:id/public', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data: card, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', id)
+      .eq('is_published', true)
+      .single();
+
+    if (error || !card) {
+      return res.status(404).json({ error: 'Card not found or not published' });
+    }
+
+    // Increment view count
+    await supabase
+      .from('cards')
+      .update({ views_count: (card.views_count || 0) + 1 })
+      .eq('id', id);
+
+    // Track analytics
+    await supabase
+      .from('analytics_events')
+      .insert({
+        card_id: id,
+        event_type: 'view',
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+        referrer: req.headers['referer']
+      });
+
+    res.json(card);
+  } catch (error) {
+    console.error('Public card fetch error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Analytics endpoints - REAL DATA
+app.get('/api/analytics/dashboard/overview', async (req, res) => {
+  try {
+    const { data: cards } = await supabase
+      .from('cards')
+      .select('id, views_count');
+
+    const totalCards = cards?.length || 0;
+    const totalViews = cards?.reduce((sum, c) => sum + (c.views_count || 0), 0) || 0;
+
+    // Get today's events
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayEvents } = await supabase
+      .from('analytics_events')
+      .select('event_type')
+      .gte('created_at', `${today}T00:00:00Z`);
+
+    const todayViews = todayEvents?.filter(e => e.event_type === 'view').length || 0;
+    const todayContacts = todayEvents?.filter(e => e.event_type === 'contact_save').length || 0;
+
+    res.json({
+      overview: {
+        totalCards,
+        totalViews,
+        todayViews,
+        todayContacts,
+        conversionRate: totalViews > 0 ? ((todayContacts / totalViews) * 100).toFixed(1) : 0
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard overview error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/analytics/individual/:cardId', async (req, res) => {
+  try {
+    const { cardId } = req.params;
+
+    const { data: events } = await supabase
+      .from('analytics_events')
+      .select('*')
+      .eq('card_id', cardId)
+      .order('created_at', { ascending: false });
+
+    // Process events into daily stats
+    const dailyStats = {};
+    events?.forEach(event => {
+      const date = new Date(event.created_at).toISOString().split('T')[0];
+      if (!dailyStats[date]) {
+        dailyStats[date] = { date, views: 0, contacts: 0, social: 0 };
+      }
+      if (event.event_type === 'view') dailyStats[date].views++;
+      if (event.event_type === 'contact_save') dailyStats[date].contacts++;
+      if (event.event_type === 'social_click') dailyStats[date].social++;
+    });
+
+    res.json({
+      cardId,
+      dailyStats: Object.values(dailyStats),
+      totalViews: events?.filter(e => e.event_type === 'view').length || 0,
+      totalContacts: events?.filter(e => e.event_type === 'contact_save').length || 0
+    });
+  } catch (error) {
+    console.error('Individual analytics error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Track analytics event
+app.post('/api/analytics/track', async (req, res) => {
+  try {
+    const { cardId, eventType, metadata } = req.body;
+
+    await supabase
+      .from('analytics_events')
+      .insert({
+        card_id: cardId,
+        event_type: eventType,
+        metadata: metadata || {},
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+        referrer: req.headers['referer']
+      });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Analytics tracking error:', error);
+    res.status(500).json({ error: 'Failed to track event' });
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`
+🚀 INDI Backend Server - REAL DATABASE MODE
+=========================================
+✅ Server: http://localhost:${PORT}
+✅ Health: http://localhost:${PORT}/api/health
+✅ Database: Supabase Connected
+✅ Mode: Development with REAL data
+=========================================
+  `);
+});
