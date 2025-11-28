@@ -1,33 +1,32 @@
 {
+  "name": "indi-digital-cards",
   "version": 2,
-  "name": "indi-frontend",
+  "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
-  "framework": "vite",
+  "devCommand": "npm run dev",
+  "env": {
+    "VITE_API_URL": "@vite_api_url",
+    "VITE_BACKEND_URL": "@vite_backend_url",
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
+    "VITE_APP_MODE": "@vite_app_mode"
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/assets/(.*)",
+      "source": "/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "max-age=31536000, immutable"
-        },
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
+        },
         {
           "key": "X-Frame-Options",
           "value": "DENY"
@@ -37,16 +36,14 @@
           "value": "1; mode=block"
         },
         {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
         }
       ]
     }
-  ],
-  "functions": {
-    "app/**/*": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  ]
 }
