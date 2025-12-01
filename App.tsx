@@ -350,7 +350,7 @@ function AppContent() {
   };
 
   // --- EDITOR HANDLERS ---
-  const handleSaveCard = async (cardToSave: DigitalCard) => {
+  const handleSaveCard = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
     setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
 
     // Solo guardar en backend si NO es temporal
@@ -373,6 +373,7 @@ function AppContent() {
             // Update local state with backend response that includes all fields
             const updatedCard = await response.json();
             setCards(prev => prev.map(c => c.id === cardToSave.id ? updatedCard : c));
+            return updatedCard; // Return the updated card from backend
           } else {
             console.error('Failed to update card in backend');
             // If PUT fails, try POST instead (card might not exist in backend)
@@ -387,6 +388,7 @@ function AppContent() {
             if (postResponse.ok) {
               const savedCard = await postResponse.json();
               setCards(prev => prev.map(c => c.id === cardToSave.id ? savedCard : c));
+              return savedCard;
             }
           }
         } else {
@@ -403,6 +405,7 @@ function AppContent() {
             const savedCard = await response.json();
             // Update local state with backend response
             setCards(prev => prev.map(c => c.id === cardToSave.id ? savedCard : c));
+            return savedCard;
           } else {
             console.error('Failed to save card to backend');
           }
@@ -416,42 +419,48 @@ function AppContent() {
         saveCardToStorage(cardToSave);
       }
     }
+
+    return cardToSave; // Return the card as-is if not saved to backend
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!activeCard) {
       console.error('No active card to publish');
       return;
     }
     setIsPublishing(true);
-    setTimeout(() => {
-      setIsPublishing(false);
 
-      // Generate clean, professional URLs with proper character normalization
-      const publishedUrl = generateProfileUrl(
-        activeCard.firstName || '',
-        activeCard.lastName || '',
-        activeCard.id
-      );
+    // Wait for animation
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const customSlug = generateUserSlug(
-        activeCard.firstName || '',
-        activeCard.lastName || ''
-      );
+    // Generate clean, professional URLs with proper character normalization
+    const publishedUrl = generateProfileUrl(
+      activeCard.firstName || '',
+      activeCard.lastName || '',
+      activeCard.id
+    );
 
-      const publishedCard = {
-        ...activeCard,
-        isPublished: true,
-        publishedUrl,
-        customSlug,
-        isTemporary: false
-      };
+    const customSlug = generateUserSlug(
+      activeCard.firstName || '',
+      activeCard.lastName || ''
+    );
 
-      // Always save to backend whether it's new or existing
-      handleSaveCard(publishedCard);
+    const publishedCard = {
+      ...activeCard,
+      isPublished: true,
+      publishedUrl,
+      customSlug,
+      isTemporary: false
+    };
 
-      setShowShareModal(true);
-    }, 1500);
+    // Save to backend and wait for response with updated data
+    const savedCard = await handleSaveCard(publishedCard);
+
+    // Update selected card to ensure we have the latest data with customSlug
+    setSelectedCardId(savedCard.id);
+
+    setIsPublishing(false);
+    setShowShareModal(true);
   };
 
   // --- BUSINESS LOGIC HANDLERS ---
