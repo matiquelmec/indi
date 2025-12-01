@@ -369,7 +369,11 @@ function AppContent() {
             body: JSON.stringify(cardToSave)
           });
 
-          if (!response.ok) {
+          if (response.ok) {
+            // Update local state with backend response that includes all fields
+            const updatedCard = await response.json();
+            setCards(prev => prev.map(c => c.id === cardToSave.id ? updatedCard : c));
+          } else {
             console.error('Failed to update card in backend');
             // If PUT fails, try POST instead (card might not exist in backend)
             const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {

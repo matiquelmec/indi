@@ -182,6 +182,8 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       contactFields: newCard.contact_fields,
       themeConfig: newCard.theme_config,
       isPublished: newCard.is_published,
+      publishedUrl: newCard.published_url,
+      customSlug: newCard.custom_slug,
       viewsCount: newCard.views_count,
       createdAt: newCard.created_at,
       updatedAt: newCard.updated_at
@@ -283,6 +285,8 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
       contactFields: updatedCard.contact_fields,
       themeConfig: updatedCard.theme_config,
       isPublished: updatedCard.is_published,
+      publishedUrl: updatedCard.published_url,
+      customSlug: updatedCard.custom_slug,
       viewsCount: updatedCard.views_count,
       createdAt: updatedCard.created_at,
       updatedAt: updatedCard.updated_at
