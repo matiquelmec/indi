@@ -70,6 +70,7 @@ function AppContent() {
           socialLinks: dbCard.social_links || [],
           isPublished: dbCard.is_published,
           publishedUrl: dbCard.published_url || undefined,
+          customSlug: dbCard.custom_slug || undefined,
           viewsCount: dbCard.views_count || 0,
           subscriptionStatus: 'free',
           planType: 'free'
@@ -429,7 +430,18 @@ function AppContent() {
         activeCard.id
       );
 
-      const publishedCard = { ...activeCard, isPublished: true, publishedUrl, isTemporary: false };
+      const customSlug = generateUserSlug(
+        activeCard.firstName || '',
+        activeCard.lastName || ''
+      );
+
+      const publishedCard = {
+        ...activeCard,
+        isPublished: true,
+        publishedUrl,
+        customSlug,
+        isTemporary: false
+      };
 
       // Always save to backend whether it's new or existing
       handleSaveCard(publishedCard);

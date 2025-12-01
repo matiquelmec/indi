@@ -20,6 +20,7 @@ interface DbCard {
     social_links: any;
     is_published: boolean;
     published_url: string | null;
+    custom_slug: string | null;
     views_count: number;
     created_at: string;
     updated_at: string;
@@ -152,6 +153,7 @@ export const supabaseDataService = {
             socialLinks: dbCard.social_links || [],
             isPublished: dbCard.is_published,
             publishedUrl: dbCard.published_url || undefined,
+            customSlug: dbCard.custom_slug || undefined,
             viewsCount: dbCard.views_count,
             subscriptionStatus: (dbCard.subscription_status as any) || 'free',
             trialEndsAt: dbCard.trial_ends_at ? new Date(dbCard.trial_ends_at).getTime() : undefined,
@@ -182,6 +184,7 @@ export const supabaseDataService = {
             social_links: card.socialLinks || [],
             is_published: card.isPublished || false,
             published_url: card.publishedUrl,
+            custom_slug: card.customSlug,
             subscription_status: card.subscriptionStatus,
             trial_ends_at: card.trialEndsAt ? new Date(card.trialEndsAt).toISOString() : undefined,
             plan_type: card.planType
