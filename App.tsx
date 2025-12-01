@@ -546,15 +546,23 @@ function AppContent() {
 
     // Save to backend and wait for response with updated data (IMMEDIATE save for publishing)
     const savedCard = await handleSaveCard(publishedCard, true);
+    console.log('🔍 DEBUG: savedCard received:', savedCard);
+    console.log('🔍 DEBUG: savedCard.id:', savedCard?.id);
+    console.log('🔍 DEBUG: savedCard.customSlug:', savedCard?.customSlug);
 
     // Update selected card to ensure we have the latest data with customSlug
     setSelectedCardId(savedCard.id);
+    console.log('🔍 DEBUG: setSelectedCardId called');
 
     // Store the published card for ShareModal
     setPublishedCard(savedCard);
+    console.log('🔍 DEBUG: setPublishedCard called');
 
     setIsPublishing(false);
+    console.log('🔍 DEBUG: setIsPublishing(false) called');
+
     setShowShareModal(true);
+    console.log('🔍 DEBUG: setShowShareModal(true) called');
   };
 
   // --- BUSINESS LOGIC HANDLERS ---
