@@ -160,8 +160,7 @@ app.get('/api/cards', async (req: Request, res: Response) => {
 // Create new card
 app.post('/api/cards', async (req: Request, res: Response) => {
   try {
-    console.log('🆕 BACKEND POST /api/cards');
-    console.log('🆕 RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
+    // Creating new card
 
     // Generate unique slug for URL if names are provided
     let customSlug = req.body.customSlug;
@@ -245,7 +244,7 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       updatedAt: newCard.updated_at
     };
 
-    console.log('✅ BACKEND POST RESPONSE:', JSON.stringify(responseCard, null, 2));
+    // Card created successfully
 
     return res.status(201).json(responseCard);
   } catch (error) {
@@ -316,8 +315,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    console.log('✏️ BACKEND PUT /api/cards/' + id);
-    console.log('✏️ RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
+    // Updating existing card
 
     // Check if names are being changed to regenerate URLs if needed
     let customSlug = req.body.customSlug;
@@ -423,7 +421,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
       updatedAt: updatedCard.updated_at
     };
 
-    console.log('✅ BACKEND PUT RESPONSE:', JSON.stringify(responseCard, null, 2));
+    // Card updated successfully
 
     return res.json(responseCard);
   } catch (error) {

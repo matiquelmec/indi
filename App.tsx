@@ -334,16 +334,7 @@ function AppContent() {
     const url = card.customSlug
       ? `${window.location.origin}/card/${card.customSlug}`
       : `${window.location.origin}/card/${card.id}`;
-    console.log('🔗 GENERATE SHAREABLE URL:', {
-      card: {
-        id: card.id,
-        firstName: card.firstName,
-        lastName: card.lastName,
-        customSlug: card.customSlug,
-        publishedUrl: card.publishedUrl
-      },
-      generatedUrl: url
-    });
+    // URL generated from backend data
     return url;
   };
 
@@ -389,7 +380,7 @@ function AppContent() {
 
   // Immediate save to backend (no debounce) - for manual saves and publishing
   const saveCardToBackend = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
-    console.log('🔄 BACKEND SAVE:', cardToSave.id, cardToSave.firstName, cardToSave.lastName);
+    // Saving card to backend
 
     // Solo guardar en backend si NO es temporal
     if (!cardToSave.isTemporary) {
@@ -470,7 +461,7 @@ function AppContent() {
       if (!cardToSaveNow) return;
 
       setIsSaving(true);
-      console.log('⏱️ DEBOUNCED SAVE EXECUTING:', cardToSaveNow.firstName, cardToSaveNow.lastName);
+      // Executing debounced save
 
       try {
         const savedCard = await saveCardToBackend(cardToSaveNow);
@@ -495,7 +486,7 @@ function AppContent() {
     }
 
     setIsSaving(true);
-    console.log('⚡ FORCE SAVE:', cardToSave.firstName, cardToSave.lastName);
+    // Force saving card immediately
 
     try {
       const savedCard = await saveCardToBackend(cardToSave);
@@ -509,7 +500,7 @@ function AppContent() {
 
   // Smart save handler - uses debouncing for auto-saves, immediate for manual saves
   const handleSaveCard = async (cardToSave: DigitalCard, immediate = false): Promise<DigitalCard> => {
-    console.log('💾 SAVE CARD:', immediate ? '⚡IMMEDIATE' : '⏱️DEBOUNCED', cardToSave.firstName, cardToSave.lastName);
+    // Saving card with appropriate timing
 
     // Update local state immediately for responsive UI
     setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
