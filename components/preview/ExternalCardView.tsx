@@ -192,13 +192,59 @@ const ExternalCardView: React.FC<ExternalCardViewProps> = ({
   // Loading State
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-2">Cargando tarjeta</h2>
-          <p className="text-slate-400">
-            {retryCount > 0 ? `Reintentando... (${retryCount}/3)` : 'Obteniendo información...'}
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, #10b981 0%, transparent 50%), radial-gradient(circle at 75% 75%, #3b82f6 0%, transparent 50%)`,
+            backgroundSize: '100px 100px'
+          }}></div>
+        </div>
+
+        <div className="relative z-10 text-center max-w-sm mx-auto px-6">
+          {/* Enhanced Loading Animation */}
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            {/* Outer glow ring */}
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full opacity-20 animate-pulse"></div>
+
+            {/* Rotating outer ring */}
+            <div className="absolute inset-1 border-4 border-slate-700/20 rounded-full"></div>
+
+            {/* Main spinning ring */}
+            <div className="absolute inset-1 border-4 border-transparent border-t-emerald-400 border-r-blue-400 rounded-full animate-spin" style={{ animationDuration: '1.5s' }}></div>
+
+            {/* Inner pulsing core */}
+            <div className="absolute inset-6 bg-gradient-to-br from-emerald-400/30 to-blue-500/30 rounded-full animate-pulse"></div>
+
+            {/* Center logo */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-emerald-400 font-black text-sm tracking-tight">INDI</span>
+            </div>
+          </div>
+
+          {/* Loading Text */}
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Cargando tu tarjeta
+            </h2>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              {retryCount > 0
+                ? `Reintentando conexión... (${retryCount}/3)`
+                : 'Preparando tu experiencia digital'
+              }
+            </p>
+
+            {/* Progress indicators */}
+            <div className="flex items-center justify-center gap-2 mt-6">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 bg-emerald-400/60 rounded-full animate-pulse"
+                  style={{ animationDelay: `${i * 0.2}s` }}
+                ></div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

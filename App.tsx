@@ -872,16 +872,19 @@ function AppContent() {
 
                         {/* Auto-save Indicator */}
                         {(isSaving || lastSaveTime) && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-700/50">
                             {isSaving ? (
                               <>
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-                                <span className="text-xs text-slate-400">Guardando</span>
+                                <div className="relative w-3 h-3">
+                                  <div className="absolute inset-0 border border-blue-400/30 rounded-full"></div>
+                                  <div className="absolute inset-0 border border-transparent border-t-blue-400 rounded-full animate-spin"></div>
+                                </div>
+                                <span className="text-xs text-blue-400 font-medium">Guardando...</span>
                               </>
                             ) : (
                               <>
-                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                <span className="text-xs text-slate-400">Guardado</span>
+                                <div className="w-3 h-3 bg-emerald-400 rounded-full shadow-sm shadow-emerald-400/30"></div>
+                                <span className="text-xs text-emerald-400 font-medium">Guardado</span>
                               </>
                             )}
                           </div>
@@ -980,9 +983,15 @@ function AppContent() {
       {/* Loading Overlay for Refreshing */}
       {isRefreshing && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[60] animate-fade-in">
-          <div className="bg-slate-800/90 backdrop-blur-md text-white px-6 py-3 rounded-lg shadow-2xl border border-slate-600 flex items-center gap-3">
-            <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-sm font-medium">Actualizando datos...</span>
+          <div className="bg-slate-800/95 backdrop-blur-xl text-white px-8 py-4 rounded-2xl shadow-2xl border border-slate-600/50 flex items-center gap-4">
+            <div className="relative w-6 h-6">
+              <div className="absolute inset-0 border-2 border-emerald-400/30 rounded-full"></div>
+              <div className="absolute inset-0 border-2 border-transparent border-t-emerald-400 border-r-emerald-400/60 rounded-full animate-spin"></div>
+              <div className="absolute inset-1 bg-emerald-400/20 rounded-full animate-pulse"></div>
+            </div>
+            <span className="text-sm font-medium bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Actualizando datos...
+            </span>
           </div>
         </div>
       )}

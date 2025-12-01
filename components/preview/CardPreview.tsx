@@ -31,7 +31,31 @@ interface CardPreviewProps {
 const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'preview', language = 'es' }) => {
   // Early return if card is null or undefined
   if (!card) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="relative">
+          {/* Modern loading animation */}
+          <div className="w-20 h-20 relative">
+            {/* Outer rotating ring */}
+            <div className="absolute inset-0 border-4 border-slate-700/30 rounded-full"></div>
+            {/* Inner glowing ring */}
+            <div className="absolute inset-0 border-4 border-transparent border-t-emerald-400 border-r-emerald-400/50 rounded-full animate-spin"></div>
+            {/* Center dot */}
+            <div className="absolute inset-4 bg-emerald-400/20 rounded-full animate-pulse"></div>
+          </div>
+
+          {/* Loading text */}
+          <div className="mt-6 text-center">
+            <div className="text-emerald-400 font-semibold tracking-wide animate-pulse">
+              Cargando tarjeta...
+            </div>
+            <div className="text-slate-400 text-sm mt-2 opacity-60">
+              Preparando tu experiencia
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Analytics tracking
