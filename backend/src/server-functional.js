@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { createClient } = require('@supabase/supabase-js');
+const { createUniqueSlug } = require('../api/urlUtils');
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
@@ -155,6 +156,33 @@ app.get('/api/cards', async (req, res) => {
 
 app.post('/api/cards', async (req, res) => {
   try {
+    console.log('🆕 BACKEND POST /api/cards');
+    console.log('🆕 RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
+
+    // Generate unique slug for URL if names are provided
+    let customSlug = req.body.customSlug;
+    let publishedUrl = req.body.publishedUrl;
+
+    if (req.body.firstName && req.body.lastName && !customSlug) {
+      // Get existing slugs to ensure uniqueness
+      const { data: existingCards, error: slugError } = await supabase
+        .from('cards')
+        .select('custom_slug')
+        .not('custom_slug', 'is', null);
+
+      if (slugError) {
+        console.error('Error fetching existing slugs:', slugError);
+      } else {
+        const existingSlugs = existingCards?.map(card => card.custom_slug).filter(Boolean) || [];
+        customSlug = createUniqueSlug(req.body.firstName, req.body.lastName, existingSlugs);
+
+        if (customSlug) {
+          publishedUrl = `https://frontindi.vercel.app/card/${customSlug}`;
+          console.log(`🔗 Generated unique slug: ${customSlug} -> ${publishedUrl}`);
+        }
+      }
+    }
+
     // Map frontend camelCase to database snake_case
     const cardData = {
       user_id: req.body.userId || null,
@@ -172,6 +200,8 @@ app.post('/api/cards', async (req, res) => {
       contact_fields: req.body.contactFields,
       theme_config: req.body.themeConfig,
       is_published: req.body.isPublished || false,
+      published_url: publishedUrl,
+      custom_slug: customSlug,
       views_count: 0
     };
 
@@ -203,6 +233,8 @@ app.post('/api/cards', async (req, res) => {
       contactFields: newCard.contact_fields,
       themeConfig: newCard.theme_config,
       isPublished: newCard.is_published,
+      publishedUrl: newCard.published_url,
+      customSlug: newCard.custom_slug,
       viewsCount: newCard.views_count,
       createdAt: newCard.created_at,
       updatedAt: newCard.updated_at

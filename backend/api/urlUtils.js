@@ -38,8 +38,31 @@ const isValidSlug = (slug) => {
   return slug && slug.length > 1 && /^[a-z0-9-]+$/.test(slug);
 };
 
+/**
+ * Creates a unique slug by checking against existing slugs and adding counter if needed
+ */
+const createUniqueSlug = (firstName, lastName, existingSlugs) => {
+  const baseSlug = generateUserSlug(firstName, lastName);
+
+  if (!isValidSlug(baseSlug)) {
+    // If names can't create a valid slug, return empty (will use ID fallback)
+    return '';
+  }
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (existingSlugs.includes(slug)) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+};
+
 module.exports = {
   normalizeStringForUrl,
   generateUserSlug,
-  isValidSlug
+  isValidSlug,
+  createUniqueSlug
 };
