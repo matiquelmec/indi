@@ -822,7 +822,14 @@ function AppContent() {
         </div>
       )}
 
-      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => { setShowShareModal(false); setPublishedCard(null); }} url={publishedCard ? generateShareableUrl(publishedCard) : ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
+      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => { setShowShareModal(false); setPublishedCard(null); }} url={publishedCard ? generateShareableUrl(publishedCard) : ''} onOpenLive={() => {
+        setShowShareModal(false);
+        if (publishedCard?.customSlug) {
+          window.open(`/card/${publishedCard.customSlug}`, '_blank');
+        } else if (publishedCard?.id) {
+          window.open(`/card/${publishedCard.id}`, '_blank');
+        }
+      }} language={language} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
 
     </div>

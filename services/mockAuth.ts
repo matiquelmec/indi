@@ -159,7 +159,7 @@ export const mockAuthService = {
       firstName: 'Google',
       lastName: 'Demo',
       fullName: 'Google Demo User',
-      avatarUrl: 'https://via.placeholder.com/150',
+      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
       emailVerified: true,
       createdAt: new Date().toISOString()
     };
