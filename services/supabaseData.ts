@@ -29,133 +29,162 @@ interface DbCard {
 }
 
 export const supabaseDataService = {
-    console.error('Error fetching cards:', error);
-    return [];
-}
+    /**
+     * Fetch all cards for current user
+     */
+    async getCards(): Promise<DigitalCard[]> {
+        try {
+            const { data, error } = await supabase
+                .from('cards')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data ? data.map(card => this.mapDbToFrontend(card)) : [];
+        } catch (error) {
+            console.error('Error fetching cards:', error);
+            return [];
+        }
     },
 
-return null;
-    }
-},
+    /**
+     * Get a card by ID
+     */
+    async getCard(id: string): Promise<DigitalCard | null> {
+        try {
+            const { data, error } = await supabase
+                .from('cards')
+                .select('*')
+                .eq('id', id)
+                .single();
 
-return null;
-    }
-},
-id: user.id,
-    email: user.email,
-        first_name: user.user_metadata?.first_name || 'User',
-            last_name: user.user_metadata?.last_name || '',
-                email_verified: true
-    });
-}
-        } catch (err) {
-    console.error('Error ensuring user exists:', err);
-}
+            if (error) throw error;
+            return data ? this.mapDbToFrontend(data) : null;
+        } catch (error) {
+            console.error('Error fetching card:', error);
+            return null;
+        }
     },
 
     /**
      * Create a new card
      */
-    async createCard(card: Partial<DigitalCard>): Promise < DigitalCard > {
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if(!user) throw new Error('User not authenticated');
+    async createCard(card: Partial<DigitalCard>): Promise<DigitalCard> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('User not authenticated');
 
-        // Ensure user exists in public table to satisfy Foreign Key
-        await this.ensureUserExists(user);
+            const dbCard = this.mapFrontendToDb(card, user.id);
+            const { data, error } = await supabase
+                .from('cards')
+                .insert(dbCard)
+                .select()
+                .single();
 
-        return this.mapDbToFrontend(data);
-    } catch(error: any) {
-        console.error('Error creating card:', error);
-        throw error;
-    }
-},
+            if (error) throw error;
+            return this.mapDbToFrontend(data);
+        } catch (error: any) {
+            console.error('Error creating card:', error);
+            throw error;
+        }
+    },
 
     /**
      * Update an existing card
      */
-    async updateCard(card: DigitalCard): Promise < DigitalCard > {
+    async updateCard(card: DigitalCard): Promise<DigitalCard> {
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('User not authenticated');
+
+            const dbCard = this.mapFrontendToDb(card, user.id);
+            const { data, error } = await supabase
+                .from('cards')
+                .update(dbCard)
+                .eq('id', card.id)
+                .select()
+                .single();
+
+            if (error) throw error;
             return this.mapDbToFrontend(data);
-        } catch(error: any) {
+        } catch (error: any) {
             console.error('Error updating card:', error);
             throw error;
         }
     },
 
-        /**
-         * Delete a card
-         */
-        async deleteCard(id: string): Promise < boolean > {
-            try {
-                const { error } = await supabase
-                    .from('cards')
-                    .delete()
-                    .eq('id', id);
+    /**
+     * Delete a card
+     */
+    async deleteCard(id: string): Promise<boolean> {
+        try {
+            const { error } = await supabase
+                .from('cards')
+                .delete()
+                .eq('id', id);
 
-                if(error) throw error;
-                return true;
-            } catch(error) {
-                console.error('Error deleting card:', error);
-                return false;
-            }
-        },
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Error deleting card:', error);
+            return false;
+        }
+    },
 
-            /**
-             * Helper: Map DB snake_case to Frontend camelCase
-             */
-            mapDbToFrontend(dbCard: DbCard): DigitalCard {
-    return {
-        id: dbCard.id,
-        userId: dbCard.user_id,
-        firstName: dbCard.first_name,
-        lastName: dbCard.last_name,
-        title: dbCard.title,
-        company: dbCard.company || '',
-        bio: dbCard.bio || '',
-        email: dbCard.email || '',
-        phone: dbCard.phone || '',
-        location: dbCard.location || '',
-        avatarUrl: dbCard.avatar_url || '',
-        themeId: dbCard.theme_id,
-        themeConfig: dbCard.theme_config || {},
-        socialLinks: dbCard.social_links || [],
-        isPublished: dbCard.is_published,
-        publishedUrl: dbCard.published_url || undefined,
-        viewsCount: dbCard.views_count,
-        subscriptionStatus: (dbCard.subscription_status as any) || 'free',
-        trialEndsAt: dbCard.trial_ends_at ? new Date(dbCard.trial_ends_at).getTime() : undefined,
-        planType: (dbCard.plan_type as any) || 'free',
-        isActive: true, // Default to true as DB doesn't have this yet
-        createdAt: dbCard.created_at,
-        updatedAt: dbCard.updated_at
-    };
-},
+    /**
+     * Helper: Map DB snake_case to Frontend camelCase
+     */
+    mapDbToFrontend(dbCard: DbCard): DigitalCard {
+        return {
+            id: dbCard.id,
+            userId: dbCard.user_id,
+            firstName: dbCard.first_name,
+            lastName: dbCard.last_name,
+            title: dbCard.title,
+            company: dbCard.company || '',
+            bio: dbCard.bio || '',
+            email: dbCard.email || '',
+            phone: dbCard.phone || '',
+            location: dbCard.location || '',
+            avatarUrl: dbCard.avatar_url || '',
+            themeId: dbCard.theme_id,
+            themeConfig: dbCard.theme_config || {},
+            socialLinks: dbCard.social_links || [],
+            isPublished: dbCard.is_published,
+            publishedUrl: dbCard.published_url || undefined,
+            viewsCount: dbCard.views_count,
+            subscriptionStatus: (dbCard.subscription_status as any) || 'free',
+            trialEndsAt: dbCard.trial_ends_at ? new Date(dbCard.trial_ends_at).getTime() : undefined,
+            planType: (dbCard.plan_type as any) || 'free',
+            isActive: true,
+            createdAt: dbCard.created_at,
+            updatedAt: dbCard.updated_at
+        };
+    },
 
-/**
- * Helper: Map Frontend camelCase to DB snake_case
- */
-mapFrontendToDb(card: Partial<DigitalCard>, userId: string): Partial < DbCard > {
-    return {
-        user_id: userId,
-        first_name: card.firstName,
-        last_name: card.lastName,
-        title: card.title,
-        company: card.company,
-        bio: card.bio,
-        email: card.email,
-        phone: card.phone,
-        location: card.location,
-        avatar_url: card.avatarUrl,
-        theme_id: card.themeId || 'emerald',
-        theme_config: card.themeConfig || {},
-        social_links: card.socialLinks || [],
-        is_published: card.isPublished || false,
-        published_url: card.publishedUrl,
-        subscription_status: card.subscriptionStatus,
-        trial_ends_at: card.trialEndsAt ? new Date(card.trialEndsAt).toISOString() : undefined,
-        plan_type: card.planType
-    };
-}
+    /**
+     * Helper: Map Frontend camelCase to DB snake_case
+     */
+    mapFrontendToDb(card: Partial<DigitalCard>, userId: string): Partial<DbCard> {
+        return {
+            user_id: userId,
+            first_name: card.firstName,
+            last_name: card.lastName,
+            title: card.title,
+            company: card.company,
+            bio: card.bio,
+            email: card.email,
+            phone: card.phone,
+            location: card.location,
+            avatar_url: card.avatarUrl,
+            theme_id: card.themeId || 'emerald',
+            theme_config: card.themeConfig || {},
+            social_links: card.socialLinks || [],
+            is_published: card.isPublished || false,
+            published_url: card.publishedUrl,
+            subscription_status: card.subscriptionStatus,
+            trial_ends_at: card.trialEndsAt ? new Date(card.trialEndsAt).toISOString() : undefined,
+            plan_type: card.planType
+        };
+    }
 };
