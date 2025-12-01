@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Connection</title>
+</head>
+<body>
+    <h1>Testing API Connection</h1>
+    <div id="result"></div>
+
+    <script>
+        console.log('Testing connection to backend...');
+
+        fetch('http://localhost:5001/api/health')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Health check:', data);
+                document.getElementById('result').innerHTML += '<p>✅ Health check: ' + JSON.stringify(data) + '</p>';
+
+                // Test cards endpoint
+                return fetch('http://localhost:5001/api/cards');
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Cards data:', data);
+                document.getElementById('result').innerHTML += '<p>✅ Cards data: ' + JSON.stringify(data) + '</p>';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML += '<p>❌ Error: ' + error + '</p>';
+            });
+    </script>
+</body>
+</html>
