@@ -52,9 +52,16 @@ function AppContent() {
   const t = translations[language].nav;
 
   // Function to fetch card from backend if not found locally
-  const fetchCardFromBackend = async (cardId: string) => {
+  const fetchCardFromBackend = async (cardIdOrSlug: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardId}/public`);
+      // Detect if it's a UUID (8-4-4-4-12 format) or a slug
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cardIdOrSlug);
+      const endpoint = isUUID
+        ? `${import.meta.env.VITE_API_URL}/cards/${cardIdOrSlug}/public`
+        : `${import.meta.env.VITE_API_URL}/cards/by-slug/${cardIdOrSlug}`;
+
+      console.log(`🔍 Fetching card: ${cardIdOrSlug}, isUUID: ${isUUID}, endpoint: ${endpoint}`);
+      const response = await fetch(endpoint);
       if (response.ok) {
         const dbCard = await response.json();
 
@@ -82,12 +89,12 @@ function AppContent() {
           planType: 'free'
         };
 
-        setCards(prev => [...(prev || []).filter(c => c.id !== cardId), card]);
-        setSelectedCardId(cardId);
+        setCards(prev => [...(prev || []).filter(c => c.id !== card.id), card]);
+        setSelectedCardId(card.id); // Use the actual card ID, not the slug
         setCurrentView('live');
         setIsExternalCard(true); // Mark as external card
       } else {
-        console.error('Card not found:', cardId);
+        console.error('Card not found:', cardIdOrSlug);
         // Redirect to 404 or landing page
         setCurrentView('landing');
       }
@@ -314,16 +321,19 @@ function AppContent() {
     setCurrentView('live');
     setIsExternalCard(false); // Reset external flag for owned cards
 
-    // Update URL for live view using proper URL generation
-    const fullUrl = generateProfileUrl(card.firstName || '', card.lastName || '', card.id);
-    const newUrl = fullUrl.replace(window.location.origin, '');
+    // Update URL for live view using backend-generated URL
+    const newUrl = card.customSlug
+      ? `/card/${card.customSlug}`
+      : `/card/${card.id}`;
 
     window.history.pushState({}, '', newUrl);
   };
 
   // Helper function to generate shareable URLs
   const generateShareableUrl = (card: DigitalCard): string => {
-    const url = generateProfileUrl(card.firstName || '', card.lastName || '', card.id);
+    const url = card.customSlug
+      ? `${window.location.origin}/card/${card.customSlug}`
+      : `${window.location.origin}/card/${card.id}`;
     console.log('🔗 GENERATE SHAREABLE URL:', {
       card: {
         id: card.id,
