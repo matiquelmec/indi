@@ -148,6 +148,8 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       contact_fields: req.body.contactFields,
       theme_config: req.body.themeConfig,
       is_published: req.body.isPublished || false,
+      published_url: req.body.publishedUrl,
+      custom_slug: req.body.customSlug,
       views_count: 0
     };
 
@@ -242,6 +244,8 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
       contact_fields: req.body.contactFields,
       theme_config: req.body.themeConfig,
       is_published: req.body.isPublished,
+      published_url: req.body.publishedUrl,
+      custom_slug: req.body.customSlug,
       views_count: req.body.viewsCount || 0
     };
 
