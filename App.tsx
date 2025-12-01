@@ -50,7 +50,31 @@ function AppContent() {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardId}/public`);
       if (response.ok) {
-        const card = await response.json();
+        const dbCard = await response.json();
+
+        // Transform snake_case to camelCase
+        const card: DigitalCard = {
+          id: dbCard.id,
+          userId: dbCard.user_id,
+          firstName: dbCard.first_name,
+          lastName: dbCard.last_name,
+          title: dbCard.title,
+          company: dbCard.company || '',
+          bio: dbCard.bio || '',
+          email: dbCard.email || '',
+          phone: dbCard.phone || '',
+          location: dbCard.location || '',
+          avatarUrl: dbCard.avatar_url || '',
+          themeId: dbCard.theme_id,
+          themeConfig: dbCard.theme_config || {},
+          socialLinks: dbCard.social_links || [],
+          isPublished: dbCard.is_published,
+          publishedUrl: dbCard.published_url || undefined,
+          viewsCount: dbCard.views_count || 0,
+          subscriptionStatus: 'free',
+          planType: 'free'
+        };
+
         setCards(prev => [...(prev || []).filter(c => c.id !== cardId), card]);
         setSelectedCardId(cardId);
         setCurrentView('live');
@@ -194,6 +218,7 @@ function AppContent() {
         console.log('🔄 User not authenticated, redirecting to landing');
         setCurrentView('landing');
       }
+      // Don't redirect if viewing a public card (currentView === 'live' && isExternalCard)
     }
   }, [isAuthenticated, authLoading, currentView]);
 
