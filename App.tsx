@@ -550,19 +550,24 @@ function AppContent() {
     console.log('🔍 DEBUG: savedCard.id:', savedCard?.id);
     console.log('🔍 DEBUG: savedCard.customSlug:', savedCard?.customSlug);
 
-    // Update selected card to ensure we have the latest data with customSlug
+    // Update all states in sequence with proper timing
     setSelectedCardId(savedCard.id);
-    console.log('🔍 DEBUG: setSelectedCardId called');
-
-    // Store the published card for ShareModal
     setPublishedCard(savedCard);
-    console.log('🔍 DEBUG: setPublishedCard called');
 
-    setIsPublishing(false);
-    console.log('🔍 DEBUG: setIsPublishing(false) called');
+    // Use setTimeout to ensure state updates complete before opening modal
+    setTimeout(() => {
+      setIsPublishing(false);
+      setShowShareModal(true);
+      console.log('🔍 DEBUG: Modal states updated');
+    }, 50);
 
-    setShowShareModal(true);
-    console.log('🔍 DEBUG: setShowShareModal(true) called');
+    // Debug state after all updates
+    setTimeout(() => {
+      console.log('🔍 DEBUG: Final state check:');
+      console.log('🔍 DEBUG: isPublishing:', isPublishing);
+      console.log('🔍 DEBUG: showShareModal:', showShareModal);
+      console.log('🔍 DEBUG: publishedCard:', publishedCard);
+    }, 100);
   };
 
   // --- BUSINESS LOGIC HANDLERS ---
