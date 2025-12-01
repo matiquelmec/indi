@@ -138,19 +138,39 @@ const Analytics: React.FC<AnalyticsProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/30 border border-slate-700 rounded-xl p-4">
         <div className="flex items-center gap-4">
           {/* Refresh Button */}
-          <button
-            onClick={refreshAnalytics}
-            disabled={isRefreshing}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-              isRefreshing
-                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
-            }`}
-            title="Actualizar datos en tiempo real"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={refreshAnalytics}
+              disabled={isRefreshing}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                isRefreshing
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                  : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+              }`}
+              title="Actualizar datos (usa cache inteligente)"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+            </button>
+
+            <button
+              onClick={async () => {
+                setIsRefreshing(true);
+                await analyticsService.bustCacheAndRefresh();
+                await loadAnalytics();
+                setIsRefreshing(false);
+              }}
+              disabled={isRefreshing}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors border ${
+                isRefreshing
+                  ? 'bg-red-900/20 border-red-800 text-red-400 cursor-not-allowed'
+                  : 'bg-red-900/20 border-red-800 hover:bg-red-900/40 text-red-400 hover:text-red-300'
+              }`}
+              title="Limpiar cache y obtener datos frescos"
+            >
+              💥 Cache Bust
+            </button>
+          </div>
 
           <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
             <button

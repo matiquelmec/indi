@@ -517,6 +517,17 @@ app.get('/api/analytics/dashboard/overview', async (req, res) => {
     const todayViews = todayEvents?.filter(e => e.event_type === 'view').length || 0;
     const todayContacts = todayEvents?.filter(e => e.event_type === 'contact_save').length || 0;
 
+    // Set intelligent cache headers for analytics
+    const now = new Date();
+    const etag = `"analytics-${totalCards}-${totalViews}-${todayViews}-${Math.floor(now.getTime() / 60000)}"`;
+
+    res.set({
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120', // 1 min cache, 2 min stale
+      'ETag': etag,
+      'Last-Modified': now.toUTCString(),
+      'Vary': 'Accept-Encoding'
+    });
+
     res.json({
       overview: {
         totalCards,
@@ -603,8 +614,21 @@ app.get('/api/analytics/dashboard/chart', async (req, res) => {
       }
     });
 
+    // Set cache headers for chart data
+    const chartData = Object.values(dailyStats);
+    const now = new Date();
+    const dataHash = chartData.reduce((hash, day) => hash + day.views + day.clicks + day.contacts, 0);
+    const etag = `"chart-${dataHash}-${Math.floor(now.getTime() / 60000)}"`;
+
+    res.set({
+      'Cache-Control': 'public, max-age=90, stale-while-revalidate=180', // 90 sec cache, 3 min stale
+      'ETag': etag,
+      'Last-Modified': now.toUTCString(),
+      'Vary': 'Accept-Encoding'
+    });
+
     res.json({
-      chartData: Object.values(dailyStats)
+      chartData
     });
   } catch (error) {
     console.error('Chart data error:', error);

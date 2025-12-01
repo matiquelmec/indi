@@ -4,6 +4,7 @@
  */
 
 import { AnalyticsData } from '../types';
+import { analyticsCache } from './cacheManager';
 
 export interface AnalyticsOverview {
   totalCards: number;
@@ -79,8 +80,7 @@ class AnalyticsService {
         console.log(`🔄 Trying endpoint: ${endpoint}${path}`);
 
         const response = await fetch(`${endpoint}${path}`, {
-          ...options,
-          signal: AbortSignal.timeout(8000) // 8 second timeout per attempt
+          ...options
         });
 
         if (response.ok) {
@@ -108,30 +108,40 @@ class AnalyticsService {
    * Get dashboard overview analytics (all user cards)
    */
   async getDashboardOverview(): Promise<AnalyticsOverview> {
-    try {
-      console.log('🔍 Fetching dashboard overview analytics...');
+    return analyticsCache.wrap(
+      'dashboard_overview',
+      async () => {
+        try {
+          console.log('🔍 Fetching fresh dashboard overview analytics...');
 
-      const response = await this.fetchWithFallback('/analytics/dashboard/overview', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+          const response = await fetch(`${API_BASE}/analytics/dashboard/overview`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`Analytics API error: ${response.status} - ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          return data.overview;
+        } catch (error) {
+          console.error('⚠️ Analytics dashboard overview failed:', error);
+
+          // Return zero state with graceful degradation
+          return {
+            totalCards: 0,
+            totalViews: 0,
+            todayViews: 0,
+            todayContacts: 0,
+            conversionRate: '0'
+          };
         }
-      });
-
-      const data = await response.json();
-      return data.overview;
-    } catch (error) {
-      console.error('⚠️ Analytics dashboard overview failed:', error);
-
-      // Return zero state with graceful degradation
-      return {
-        totalCards: 0,
-        totalViews: 0,
-        todayViews: 0,
-        todayContacts: 0,
-        conversionRate: '0'
-      };
-    }
+      },
+      2 * 60 * 1000 // 2 minutes cache
+    );
   }
 
   /**
@@ -175,31 +185,42 @@ class AnalyticsService {
    * Get real-time chart data for last 7 days
    */
   async getChartData(cardId?: string): Promise<AnalyticsData[]> {
-    try {
-      if (cardId) {
-        // Get individual card data
-        console.log('🔍 Fetching individual card analytics:', cardId);
-        const analytics = await this.getCardAnalytics(cardId);
-        return analytics.dailyStats;
-      } else {
-        // Get aggregated data for all cards
-        console.log('🔍 Fetching chart data...');
+    const cacheKey = cardId ? `chart_data_${cardId}` : 'chart_data_all';
 
-        const response = await this.fetchWithFallback('/analytics/dashboard/chart', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
+    return analyticsCache.wrap(
+      cacheKey,
+      async () => {
+        try {
+          if (cardId) {
+            // Get individual card data
+            console.log('🔍 Fetching individual card analytics:', cardId);
+            const analytics = await this.getCardAnalytics(cardId);
+            return analytics.dailyStats;
+          } else {
+            // Get aggregated data for all cards
+            console.log('🔍 Fetching fresh chart data...');
+
+            const response = await fetch(`${API_BASE}/analytics/dashboard/chart`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              return data.chartData || this.generateEmptyWeekData();
+            } else {
+              throw new Error(`Chart data API error: ${response.status} - ${response.statusText}`);
+            }
           }
-        });
-
-        const data = await response.json();
-        return data.chartData || this.generateEmptyWeekData();
-      }
-    } catch (error) {
-      console.error('⚠️ Chart data fetch failed:', error);
-    }
-
-    return this.generateEmptyWeekData();
+        } catch (error) {
+          console.error('⚠️ Chart data fetch failed:', error);
+          return this.generateEmptyWeekData();
+        }
+      },
+      90 * 1000 // 90 seconds cache for chart data (more frequent updates)
+    );
   }
 
   /**
@@ -337,6 +358,37 @@ class AnalyticsService {
    * Get real-time update interval (5 minutes)
    */
   static readonly UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+  /**
+   * Invalidate analytics cache (call when cards change)
+   */
+  invalidateCache(): void {
+    console.log('🗑️ Invalidating analytics cache');
+    analyticsCache.invalidatePattern('.*'); // Clear all analytics cache
+  }
+
+  /**
+   * Force refresh analytics data
+   */
+  async forceRefresh(): Promise<void> {
+    console.log('🔄 Force refreshing analytics data');
+    this.invalidateCache();
+
+    // Trigger fresh data fetch
+    await Promise.all([
+      this.getDashboardOverview(),
+      this.getChartData()
+    ]);
+  }
+
+  /**
+   * Bust cache and get fresh data (for debugging)
+   */
+  async bustCacheAndRefresh(): Promise<void> {
+    console.log('💥 Cache bust and refresh');
+    analyticsCache.bustCache();
+    await this.forceRefresh();
+  }
 }
 
 // Singleton instance
