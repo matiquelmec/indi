@@ -11,7 +11,7 @@ import LoginPage from './components/auth/LoginPage';
 import { DigitalCard, Language, ViewState } from './types';
 import { getStoredCards, saveCardToStorage, deleteCardFromStorage, createNewCardTemplate } from './services/storageService';
 import { translations } from './lib/i18n';
-import { generateProfileUrl, generateUserSlug } from './lib/urlUtils';
+import { generateUserSlug } from './lib/urlUtils';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -525,21 +525,9 @@ function AppContent() {
     // Wait for animation
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Generate clean, professional URLs with proper character normalization
-    const publishedUrl = generateProfileUrl(
-      activeCard.firstName || '',
-      activeCard.lastName || '',
-      activeCard.id
-    );
+    // Let backend handle URL and slug generation (it has uniqueness logic)
 
-    const customSlug = generateUserSlug(
-      activeCard.firstName || '',
-      activeCard.lastName || ''
-    );
-
-    console.log('📝 GENERATED DATA:', {
-      publishedUrl,
-      customSlug,
+    console.log('📝 CARD DATA TO PUBLISH:', {
       firstName: activeCard.firstName,
       lastName: activeCard.lastName,
       id: activeCard.id
@@ -548,9 +536,8 @@ function AppContent() {
     const publishedCard = {
       ...activeCard,
       isPublished: true,
-      publishedUrl,
-      customSlug,
       isTemporary: false
+      // Backend will generate customSlug and publishedUrl with uniqueness logic
     };
 
     console.log('📤 SENDING TO BACKEND:', publishedCard);
