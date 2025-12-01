@@ -98,4 +98,4 @@ sw.*
 
 # Ignore parent directories - only track this project
 ../../*
-../*
+../*Act_as_a_*.mp4

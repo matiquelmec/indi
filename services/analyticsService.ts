@@ -26,26 +26,104 @@ export interface AnalyticsEvent {
   metadata?: Record<string, any>;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL;
+// Robust API_BASE configuration for all environments
+const API_BASE = (() => {
+  // Check for various environment variables
+  if (import.meta.env.VITE_API_URL) {
+    console.log('📡 Using VITE_API_URL:', import.meta.env.VITE_API_URL);
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Production URLs based on environment
+  if (import.meta.env.PROD) {
+    console.log('🚀 Production mode - using indbackend.vercel.app');
+    return 'https://indbackend.vercel.app/api';
+  }
+
+  // Development fallbacks
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      console.log('💻 Development mode - using localhost:5001');
+      return 'http://localhost:5001/api';
+    }
+  }
+
+  // Final fallback to production
+  console.log('🔄 Fallback - using indbackend.vercel.app');
+  return 'https://indbackend.vercel.app/api';
+})();
 
 class AnalyticsService {
   private trackingQueue: AnalyticsEvent[] = [];
   private isProcessing = false;
+
+  // Update interval for real-time updates
+  readonly UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+  // List of fallback API endpoints
+  private readonly API_ENDPOINTS = [
+    API_BASE, // Primary endpoint
+    'https://indbackend.vercel.app/api', // Production fallback
+    'http://localhost:5001/api' // Local fallback (if available)
+  ];
+
+  /**
+   * Try multiple endpoints until one works
+   */
+  private async fetchWithFallback(path: string, options: RequestInit = {}): Promise<Response> {
+    let lastError: Error | null = null;
+
+    for (const endpoint of this.API_ENDPOINTS) {
+      try {
+        console.log(`🔄 Trying endpoint: ${endpoint}${path}`);
+
+        const response = await fetch(`${endpoint}${path}`, {
+          ...options,
+          signal: AbortSignal.timeout(8000) // 8 second timeout per attempt
+        });
+
+        if (response.ok) {
+          console.log(`✅ Success with endpoint: ${endpoint}`);
+          return response;
+        } else if (response.status < 500) {
+          // Client error (4xx) - don't retry with other endpoints
+          throw new Error(`Client error: ${response.status} - ${response.statusText}`);
+        }
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`❌ Failed endpoint ${endpoint}: ${error instanceof Error ? error.message : error}`);
+
+        // If it's a client error, don't try other endpoints
+        if (error instanceof Error && error.message.includes('Client error')) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError || new Error('All API endpoints failed');
+  }
 
   /**
    * Get dashboard overview analytics (all user cards)
    */
   async getDashboardOverview(): Promise<AnalyticsOverview> {
     try {
-      const response = await fetch(`${API_BASE}/analytics/dashboard/overview`);
-      if (!response.ok) {
-        throw new Error(`Analytics API error: ${response.status}`);
-      }
+      console.log('🔍 Fetching dashboard overview analytics...');
+
+      const response = await this.fetchWithFallback('/analytics/dashboard/overview', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
       const data = await response.json();
       return data.overview;
     } catch (error) {
-      console.error('Error fetching dashboard analytics:', error);
-      // Return zero state instead of mock data
+      console.error('⚠️ Analytics dashboard overview failed:', error);
+
+      // Return zero state with graceful degradation
       return {
         totalCards: 0,
         totalViews: 0,
@@ -100,18 +178,25 @@ class AnalyticsService {
     try {
       if (cardId) {
         // Get individual card data
+        console.log('🔍 Fetching individual card analytics:', cardId);
         const analytics = await this.getCardAnalytics(cardId);
         return analytics.dailyStats;
       } else {
         // Get aggregated data for all cards
-        const response = await fetch(`${API_BASE}/analytics/dashboard/chart`);
-        if (response.ok) {
-          const data = await response.json();
-          return data.chartData || this.generateEmptyWeekData();
-        }
+        console.log('🔍 Fetching chart data...');
+
+        const response = await this.fetchWithFallback('/analytics/dashboard/chart', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const data = await response.json();
+        return data.chartData || this.generateEmptyWeekData();
       }
     } catch (error) {
-      console.error('Error fetching chart data:', error);
+      console.error('⚠️ Chart data fetch failed:', error);
     }
 
     return this.generateEmptyWeekData();

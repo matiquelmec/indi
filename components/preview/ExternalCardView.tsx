@@ -16,9 +16,29 @@ interface ExternalCardViewProps {
   language?: Language;
 }
 
-const API_BASE = process.env.NODE_ENV === 'production'
-  ? 'https://indbackend.vercel.app/api'
-  : 'http://localhost:5001/api';
+// Robust API_BASE configuration matching analyticsService
+const API_BASE = (() => {
+  // Check for environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Production environment
+  if (import.meta.env.PROD) {
+    return 'https://indbackend.vercel.app/api';
+  }
+
+  // Development environment
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5001/api';
+    }
+  }
+
+  // Final fallback
+  return 'https://indbackend.vercel.app/api';
+})();
 
 // Simple cache for external cards
 const cardCache = new Map<string, { card: DigitalCard; timestamp: number }>();
