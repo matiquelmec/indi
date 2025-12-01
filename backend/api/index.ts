@@ -670,22 +670,32 @@ app.get('/api/cards/by-slug/:slug', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Slug is required' });
     }
 
-    // Get all published cards and check which ones match the slug
-    const { data: cards, error } = await supabase
+    // Query directly for the card with matching custom_slug or fallback to ID
+    const { data: cardBySlug, error: slugError } = await supabase
       .from('cards')
       .select('*')
-      .eq('is_published', true);
+      .eq('custom_slug', slug)
+      .eq('is_published', true)
+      .single();
 
-    if (error) {
-      console.error('Error fetching cards for slug lookup:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+    let matchingCard = cardBySlug;
+
+    // If no card found by custom_slug, try by ID (for backward compatibility)
+    if (!matchingCard) {
+      const { data: cardById, error: idError } = await supabase
+        .from('cards')
+        .select('*')
+        .eq('id', slug)
+        .eq('is_published', true)
+        .single();
+
+      matchingCard = cardById;
     }
 
-    // Find the card that matches the slug by generating slugs for each card
-    const matchingCard = cards?.find(card => {
-      const cardSlug = generateUserSlug(card.first_name || '', card.last_name || '');
-      return cardSlug === slug;
-    });
+    if (slugError && idError) {
+      console.error('Error fetching card by slug:', slugError, idError);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
 
     if (!matchingCard) {
       return res.status(404).json({ error: 'Card not found' });
