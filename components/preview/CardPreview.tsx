@@ -226,7 +226,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
               {/* Social Links */}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest opacity-60 mb-3" style={{ color: palette.colors.text }}>{t.connect}</h3>
-                {card.socialLinks.filter(l => l.active).map(link => (
+                {(card.socialLinks || []).filter(l => l.active).map(link => (
                   <a 
                     key={link.id}
                     href={link.url}
