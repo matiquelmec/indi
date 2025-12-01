@@ -178,7 +178,11 @@ app.post('/api/cards', async (req: Request, res: Response) => {
         console.error('Error fetching existing slugs:', slugError);
       } else {
         const existingSlugs = existingCards?.map(card => card.custom_slug).filter(Boolean) || [];
+        console.log(`🔍 VERCEL DEBUG - Existing slugs:`, existingSlugs);
+        console.log(`🔍 VERCEL DEBUG - Names: "${req.body.firstName}" "${req.body.lastName}"`);
+
         customSlug = createUniqueSlug(req.body.firstName, req.body.lastName, existingSlugs);
+        console.log(`🔍 VERCEL DEBUG - Generated slug: "${customSlug}"`);
 
         if (customSlug) {
           publishedUrl = `https://frontindi.vercel.app/card/${customSlug}`;
