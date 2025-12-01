@@ -23,8 +23,18 @@ const supabase = createClient(
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173'],
-  credentials: true
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:5173',
+    'https://frontindi.vercel.app',
+    'https://indbackend.vercel.app'
+  ],
+  credentials: true,
+  // Allow external card access
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -407,6 +417,82 @@ app.get('/api/cards/:id/public', async (req, res) => {
     res.json(card);
   } catch (error) {
     console.error('Public card fetch error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get card by custom slug (for /u/username or /card/slug URLs)
+app.get('/api/cards/by-slug/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    console.log(`🔍 Looking for card by slug: ${slug}`);
+
+    // Search for card by custom_slug first (most accurate)
+    let { data: cards, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('is_published', true)
+      .eq('custom_slug', slug)
+      .order('created_at', { ascending: false }); // Get most recent first
+
+    // If no exact slug match, try published_url pattern
+    if (!cards || cards.length === 0) {
+      const result = await supabase
+        .from('cards')
+        .select('*')
+        .eq('is_published', true)
+        .ilike('published_url', `%${slug}%`)
+        .order('created_at', { ascending: false });
+
+      cards = result.data;
+      error = result.error;
+    }
+
+    const card = cards?.[0]; // Take the first (most recent) result
+
+    if (error || !card) {
+      console.log(`❌ Card not found for slug: ${slug}`, error);
+      return res.status(404).json({ error: 'Card not found or not published' });
+    }
+
+    console.log(`✅ Found card: ${card.first_name} ${card.last_name} (${card.id})`);
+
+    // Increment view count
+    await supabase
+      .from('cards')
+      .update({ views_count: (card.views_count || 0) + 1 })
+      .eq('id', card.id);
+
+    // Track analytics event (non-blocking for performance)
+    try {
+      await supabase
+        .from('analytics_events')
+        .insert({
+          card_id: card.id,
+          event_type: 'view',
+          visitor_id: `visitor_${req.ip?.replace(/\./g, '_')}`,
+          ip_address: req.ip,
+          user_agent: req.headers['user-agent'],
+          referrer: req.headers['referer'],
+          device_type: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'desktop'
+        });
+    } catch (analyticsError) {
+      console.error('Analytics tracking error:', analyticsError);
+    }
+
+    // Set cache headers for external cards
+    res.set({
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600', // 5 minutes cache, 10 minutes stale
+      'ETag': `"${card.id}-${card.updated_at || card.created_at}"`,
+      'Last-Modified': new Date(card.updated_at || card.created_at).toUTCString(),
+      'Access-Control-Allow-Origin': '*', // Allow external embedding
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+
+    res.json({ card });
+  } catch (error) {
+    console.error('Card by slug fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -164,6 +164,18 @@ export class INDIRouter {
         title: 'Tarjeta Digital'
       },
 
+      // Direct card access routes (public)
+      {
+        path: '/card/:slug',
+        component: 'card-direct',
+        title: 'Tarjeta Digital'
+      },
+      {
+        path: '/card/:id',
+        component: 'card-legacy',
+        title: 'Tarjeta Digital'
+      },
+
       // Legacy support (will redirect)
       {
         path: '/dashboard',
@@ -182,11 +194,6 @@ export class INDIRouter {
         component: 'legacy-settings',
         auth: true,
         title: 'Redirigiendo...'
-      },
-      {
-        path: '/card/:id',
-        component: 'card-legacy',
-        title: 'Tarjeta Digital'
       }
     ];
   }

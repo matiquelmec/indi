@@ -13,6 +13,7 @@ import LoginPage from '../auth/LoginPage';
 import Dashboard from '../dashboard/Dashboard';
 import CardEditor from '../editor/CardEditor';
 import CardPreview from '../preview/CardPreview';
+import ExternalCardView from '../preview/ExternalCardView';
 
 interface RouterProviderProps {
   children?: React.ReactNode;
@@ -129,16 +130,15 @@ export default function RouterProvider({ children }: RouterProviderProps) {
         );
 
       case 'card-live':
-        return <CardPreview username={state.params.username} cardSlug={state.params.cardSlug} />;
+        return <ExternalCardView username={state.params.username} cardSlug={state.params.cardSlug} />;
+
+      case 'card-direct':
+        // Direct card access via /card/:slug
+        return <ExternalCardView cardSlug={state.params.slug} />;
 
       case 'card-legacy':
-        // Handle legacy URLs by redirecting
-        return (
-          <div className="min-h-screen bg-slate-950 text-white p-8">
-            <h1 className="text-3xl font-bold mb-8">Redirigiendo...</h1>
-            <p className="text-slate-400">Actualizando URL...</p>
-          </div>
-        );
+        // Handle legacy URLs by redirecting to external card view with ID
+        return <ExternalCardView cardId={state.params.id} />;
 
       default:
         return (
