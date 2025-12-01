@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
-const { generateUserSlug } = require('./urlUtils');
+const { generateUserSlug, createUniqueSlug } = require('./urlUtils');
 
 // Type definitions for Express
 interface Request {
@@ -163,6 +163,30 @@ app.post('/api/cards', async (req: Request, res: Response) => {
     console.log('🆕 BACKEND POST /api/cards');
     console.log('🆕 RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
 
+    // Generate unique slug for URL if names are provided
+    let customSlug = req.body.customSlug;
+    let publishedUrl = req.body.publishedUrl;
+
+    if (req.body.firstName && req.body.lastName && !customSlug) {
+      // Get existing slugs to ensure uniqueness
+      const { data: existingCards, error: slugError } = await supabase
+        .from('cards')
+        .select('custom_slug')
+        .not('custom_slug', 'is', null);
+
+      if (slugError) {
+        console.error('Error fetching existing slugs:', slugError);
+      } else {
+        const existingSlugs = existingCards?.map(card => card.custom_slug).filter(Boolean) || [];
+        customSlug = createUniqueSlug(req.body.firstName, req.body.lastName, existingSlugs);
+
+        if (customSlug) {
+          publishedUrl = `https://frontindi.vercel.app/card/${customSlug}`;
+          console.log(`🔗 Generated unique slug: ${customSlug} -> ${publishedUrl}`);
+        }
+      }
+    }
+
     // Map frontend camelCase to database snake_case
     const cardData = {
       user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
@@ -180,8 +204,8 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       contact_fields: req.body.contactFields,
       theme_config: req.body.themeConfig,
       is_published: req.body.isPublished || false,
-      published_url: req.body.publishedUrl,
-      custom_slug: req.body.customSlug,
+      published_url: publishedUrl,
+      custom_slug: customSlug,
       views_count: 0
     };
 
