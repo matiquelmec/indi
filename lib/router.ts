@@ -12,6 +12,7 @@ export interface Route {
   component: string;
   exact?: boolean;
   auth?: boolean;
+  userScoped?: boolean;  // Requires user identity validation
   title?: string;
   meta?: {
     description?: string;
@@ -37,9 +38,10 @@ export class INDIRouter {
     this.setupEventListeners();
   }
 
-  // Route definitions - World-class URL structure
+  // Route definitions - User-scoped URL structure
   private defineRoutes(): Route[] {
     return [
+      // Public routes
       {
         path: '/',
         component: 'landing',
@@ -63,63 +65,6 @@ export class INDIRouter {
         title: 'Autenticando...'
       },
       {
-        path: '/dashboard',
-        component: 'dashboard',
-        auth: true,
-        exact: true,
-        title: 'Panel de Control - INDI'
-      },
-      {
-        path: '/dashboard/analytics',
-        component: 'dashboard-analytics',
-        auth: true,
-        title: 'Analytics - INDI'
-      },
-      {
-        path: '/editor',
-        component: 'editor',
-        auth: true,
-        exact: true,
-        title: 'Editor - Nueva Tarjeta'
-      },
-      {
-        path: '/editor/:cardId',
-        component: 'editor',
-        auth: true,
-        title: 'Editor - INDI'
-      },
-      {
-        path: '/editor/:cardId/preview',
-        component: 'editor-preview',
-        auth: true,
-        title: 'Vista Previa - INDI'
-      },
-      {
-        path: '/settings',
-        component: 'settings',
-        auth: true,
-        exact: true,
-        title: 'Configuración - INDI'
-      },
-      {
-        path: '/settings/billing',
-        component: 'settings-billing',
-        auth: true,
-        title: 'Facturación - INDI'
-      },
-      {
-        path: '/settings/account',
-        component: 'settings-account',
-        auth: true,
-        title: 'Cuenta - INDI'
-      },
-      {
-        path: '/upgrade',
-        component: 'upgrade',
-        auth: true,
-        title: 'Planes Premium - INDI'
-      },
-      {
         path: '/help',
         component: 'help',
         exact: true,
@@ -130,10 +75,87 @@ export class INDIRouter {
         component: 'help-topic',
         title: 'Ayuda - INDI'
       },
-      // User profiles and cards
+
+      // User-scoped authenticated routes
+      {
+        path: '/:username/dashboard',
+        component: 'dashboard',
+        auth: true,
+        userScoped: true,
+        title: 'Panel de Control - INDI'
+      },
+      {
+        path: '/:username/dashboard/analytics',
+        component: 'dashboard-analytics',
+        auth: true,
+        userScoped: true,
+        title: 'Analytics - INDI'
+      },
+      {
+        path: '/:username/editor',
+        component: 'editor',
+        auth: true,
+        userScoped: true,
+        exact: true,
+        title: 'Editor - Nueva Tarjeta'
+      },
+      {
+        path: '/:username/editor/:cardId',
+        component: 'editor',
+        auth: true,
+        userScoped: true,
+        title: 'Editor - INDI'
+      },
+      {
+        path: '/:username/editor/:cardId/preview',
+        component: 'editor-preview',
+        auth: true,
+        userScoped: true,
+        title: 'Vista Previa - INDI'
+      },
+      {
+        path: '/:username/settings',
+        component: 'settings',
+        auth: true,
+        userScoped: true,
+        exact: true,
+        title: 'Configuración - INDI'
+      },
+      {
+        path: '/:username/settings/billing',
+        component: 'settings-billing',
+        auth: true,
+        userScoped: true,
+        title: 'Facturación - INDI'
+      },
+      {
+        path: '/:username/settings/account',
+        component: 'settings-account',
+        auth: true,
+        userScoped: true,
+        title: 'Cuenta - INDI'
+      },
+      {
+        path: '/:username/cards',
+        component: 'cards-list',
+        auth: true,
+        userScoped: true,
+        title: 'Mis Tarjetas - INDI'
+      },
+
+      // Global authenticated routes (not user-scoped)
+      {
+        path: '/upgrade',
+        component: 'upgrade',
+        auth: true,
+        title: 'Planes Premium - INDI'
+      },
+
+      // Public user profiles and cards
       {
         path: '/:username',
         component: 'profile',
+        exact: true,
         title: 'Perfil Profesional'
       },
       {
@@ -141,7 +163,26 @@ export class INDIRouter {
         component: 'card-live',
         title: 'Tarjeta Digital'
       },
+
       // Legacy support (will redirect)
+      {
+        path: '/dashboard',
+        component: 'legacy-dashboard',
+        auth: true,
+        title: 'Redirigiendo...'
+      },
+      {
+        path: '/editor',
+        component: 'legacy-editor',
+        auth: true,
+        title: 'Redirigiendo...'
+      },
+      {
+        path: '/settings',
+        component: 'legacy-settings',
+        auth: true,
+        title: 'Redirigiendo...'
+      },
       {
         path: '/card/:id',
         component: 'card-legacy',
@@ -314,6 +355,53 @@ export class INDIRouter {
     }
 
     meta.content = content;
+  }
+
+  // User security validation
+  validateUserAccess(currentUser: any, route: Route): boolean {
+    // If route is not user-scoped, allow access
+    if (!route.userScoped) {
+      return true;
+    }
+
+    // Extract username from current route
+    const usernameFromPath = this.currentState.params.username;
+    if (!usernameFromPath || !currentUser) {
+      return false;
+    }
+
+    // Extract username from current user email
+    const userSlug = currentUser.email ?
+      currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-') :
+      null;
+
+    return userSlug === usernameFromPath;
+  }
+
+  // Get redirect for user after authentication
+  getUserRedirect(user: any): string {
+    if (!user?.email) return '/auth';
+
+    const userSlug = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+    return `/${userSlug}/dashboard`;
+  }
+
+  // Legacy route migration
+  migrateLegacyRoute(path: string, user: any): string | null {
+    if (!user?.email) return null;
+
+    const userSlug = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+    switch (path) {
+      case '/dashboard':
+        return `/${userSlug}/dashboard`;
+      case '/editor':
+        return `/${userSlug}/editor`;
+      case '/settings':
+        return `/${userSlug}/settings`;
+      default:
+        return null;
+    }
   }
 
   // Initialize router

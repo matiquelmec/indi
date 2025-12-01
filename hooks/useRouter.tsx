@@ -80,25 +80,54 @@ export function useRouteMatch(pattern: string): boolean {
 }
 
 /**
- * Hook for authentication-aware routing
+ * Hook for authentication-aware routing with user security
  */
-export function useAuthRouter(isAuthenticated: boolean) {
+export function useAuthRouter(isAuthenticated: boolean, user?: any) {
   const { navigate, state } = useRouter();
   const currentRoute = router.getCurrentRoute();
 
   useEffect(() => {
-    // Redirect unauthenticated users from protected routes
+    // Handle unauthenticated users
     if (!isAuthenticated && currentRoute?.auth) {
       navigate('/auth');
+      return;
     }
 
-    // Redirect authenticated users from auth pages to dashboard
-    if (isAuthenticated && ['/auth', '/'].includes(state.currentPath)) {
-      navigate('/dashboard');
-    }
-  }, [isAuthenticated, state.currentPath, currentRoute, navigate]);
+    // Handle authenticated users
+    if (isAuthenticated && user) {
+      // Redirect from auth/landing to user dashboard
+      if (['/auth', '/'].includes(state.currentPath)) {
+        const userRedirect = router.getUserRedirect(user);
+        navigate(userRedirect);
+        return;
+      }
 
-  return { navigate, currentRoute, isProtectedRoute: currentRoute?.auth || false };
+      // Handle legacy routes
+      const legacyRedirect = router.migrateLegacyRoute(state.currentPath, user);
+      if (legacyRedirect) {
+        navigate(legacyRedirect, { replace: true });
+        return;
+      }
+
+      // Validate user-scoped routes
+      if (currentRoute?.userScoped) {
+        const hasAccess = router.validateUserAccess(user, currentRoute);
+        if (!hasAccess) {
+          // Redirect to user's own dashboard if trying to access another user's area
+          const userRedirect = router.getUserRedirect(user);
+          navigate(userRedirect);
+          return;
+        }
+      }
+    }
+  }, [isAuthenticated, user, state.currentPath, currentRoute, navigate]);
+
+  return {
+    navigate,
+    currentRoute,
+    isProtectedRoute: currentRoute?.auth || false,
+    isUserScopedRoute: currentRoute?.userScoped || false
+  };
 }
 
 /**

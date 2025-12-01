@@ -92,12 +92,16 @@ export type RouteComponent =
   | 'settings'
   | 'settings-billing'
   | 'settings-account'
+  | 'cards-list'
   | 'upgrade'
   | 'help'
   | 'help-topic'
   | 'profile'
   | 'card-live'
-  | 'card-legacy';
+  | 'card-legacy'
+  | 'legacy-dashboard'
+  | 'legacy-editor'
+  | 'legacy-settings';
 
 export interface NavigationState {
   currentComponent: RouteComponent;
