@@ -747,6 +747,73 @@ app.use('*', (req: Request, res: Response) => {
   });
 });
 
+// Cleanup endpoint for corrupted data
+app.post('/api/cleanup', async (req: Request, res: Response) => {
+  try {
+    console.log('🧹 Starting cleanup of corrupted card data...');
+
+    const reliableAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=150&h=150&q=80';
+
+    // Find all cards with problematic avatars
+    const { data: problematicCards, error: fetchError } = await supabase
+      .from('cards')
+      .select('id, avatar_url, first_name, last_name')
+      .or('avatar_url.is.null,avatar_url.like.%via.placeholder%,avatar_url.like.%placeholder%');
+
+    if (fetchError) {
+      console.error('Error fetching problematic cards:', fetchError);
+      return res.status(500).json({ error: 'Failed to fetch cards for cleanup' });
+    }
+
+    if (!problematicCards || problematicCards.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No corrupted cards found',
+        cleaned: 0
+      });
+    }
+
+    console.log(`🔍 Found ${problematicCards.length} cards with corrupted avatars`);
+
+    // Update each problematic card
+    const cleanupPromises = problematicCards.map(async (card) => {
+      const { error: updateError } = await supabase
+        .from('cards')
+        .update({ avatar_url: reliableAvatar })
+        .eq('id', card.id);
+
+      if (updateError) {
+        console.error(`Error updating card ${card.id}:`, updateError);
+        return { id: card.id, success: false, error: updateError.message };
+      }
+
+      console.log(`✅ Fixed avatar for: ${card.first_name} ${card.last_name}`);
+      return { id: card.id, success: true };
+    });
+
+    const results = await Promise.all(cleanupPromises);
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    console.log(`🎉 Cleanup complete: ${successful} fixed, ${failed} failed`);
+
+    return res.json({
+      success: true,
+      message: `Cleanup complete: ${successful} cards fixed, ${failed} failed`,
+      cleaned: successful,
+      failed: failed,
+      results: results
+    });
+
+  } catch (error) {
+    console.error('Cleanup endpoint error:', error);
+    return res.status(500).json({
+      error: 'Cleanup failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Error handler
 app.use((error: any, req: Request, res: Response, next: any) => {
   console.error('Error:', error);
