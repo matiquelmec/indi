@@ -66,26 +66,26 @@ function AppContent() {
       if (response.ok) {
         const dbCard = await response.json();
 
-        // Transform snake_case to camelCase
+        // Backend already returns camelCase, use directly
         const card: DigitalCard = {
           id: dbCard.id,
-          userId: dbCard.user_id,
-          firstName: dbCard.first_name,
-          lastName: dbCard.last_name,
+          userId: dbCard.userId,
+          firstName: dbCard.firstName,
+          lastName: dbCard.lastName,
           title: dbCard.title,
           company: dbCard.company || '',
           bio: dbCard.bio || '',
           email: dbCard.email || '',
           phone: dbCard.phone || '',
           location: dbCard.location || '',
-          avatarUrl: dbCard.avatar_url || '',
-          themeId: dbCard.theme_id,
-          themeConfig: dbCard.theme_config || {},
-          socialLinks: dbCard.social_links || [],
-          isPublished: dbCard.is_published,
-          publishedUrl: dbCard.published_url || undefined,
-          customSlug: dbCard.custom_slug || undefined,
-          viewsCount: dbCard.views_count || 0,
+          avatarUrl: dbCard.avatarUrl || '',
+          themeId: dbCard.themeId,
+          themeConfig: dbCard.themeConfig || {},
+          socialLinks: dbCard.socialLinks || [],
+          isPublished: dbCard.isPublished,
+          publishedUrl: dbCard.publishedUrl || undefined,
+          customSlug: dbCard.customSlug || undefined,
+          viewsCount: dbCard.viewsCount || 0,
           subscriptionStatus: 'free',
           planType: 'free'
         };
