@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   AreaChart,
   Area,
@@ -17,12 +17,14 @@ import {
   ArrowLeft,
   Users,
   Share2,
-  Activity
+  Activity,
+  RefreshCw
 } from 'lucide-react';
 import { translations } from '../../lib/i18n';
+import { analyticsService, AnalyticsOverview } from '../../services/analyticsService';
 
 interface AnalyticsProps {
-  data: AnalyticsData[];
+  data?: AnalyticsData[]; // Made optional - we'll fetch real data
   language: Language;
   analyticsMode?: 'global' | 'individual';
   onAnalyticsModeChange?: (mode: 'global' | 'individual') => void;
@@ -32,7 +34,7 @@ interface AnalyticsProps {
 }
 
 const Analytics: React.FC<AnalyticsProps> = ({
-  data,
+  data: initialData,
   language,
   analyticsMode = 'global',
   onAnalyticsModeChange,
@@ -41,65 +43,115 @@ const Analytics: React.FC<AnalyticsProps> = ({
   cards = []
 }) => {
   const t = translations[language].analytics;
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
+  const [chartData, setChartData] = useState<AnalyticsData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // Load analytics data
-  useEffect(() => {
-    const loadAnalytics = async () => {
-      if (analyticsMode === 'individual' && !selectedAnalyticsCardId) {
-        setAnalytics(null);
-        return;
-      }
+  const loadAnalytics = useCallback(async () => {
+    if (analyticsMode === 'individual' && !selectedAnalyticsCardId) {
+      setAnalytics(null);
+      setChartData([]);
+      return;
+    }
 
-      setIsLoading(true);
-      try {
-        if (analyticsMode === 'global') {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/analytics/dashboard/overview`);
-          const data = await response.json();
-          setAnalytics(data.overview);
-        } else if (selectedAnalyticsCardId) {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/analytics/individual/${selectedAnalyticsCardId}`);
-          const data = await response.json();
-          setAnalytics({
-            totalViews: data.totalViews,
-            totalContacts: data.totalContacts,
-            totalSocial: Math.floor(data.totalContacts * 0.6),
-            conversionRate: data.totalViews > 0 ? ((data.totalContacts / data.totalViews) * 100).toFixed(1) : 0
-          });
-        }
-      } catch (error) {
-        console.error('Error loading analytics:', error);
-        // Set zero values when API fails instead of mock data
+    setIsLoading(true);
+    try {
+      if (analyticsMode === 'global') {
+        // Load dashboard overview
+        const overview = await analyticsService.getDashboardOverview();
+        setAnalytics(overview);
+
+        // Load chart data for all cards
+        const chart = await analyticsService.getChartData();
+        setChartData(chart);
+      } else if (selectedAnalyticsCardId) {
+        // Load individual card analytics
+        const cardAnalytics = await analyticsService.getCardAnalytics(selectedAnalyticsCardId);
+
         setAnalytics({
-          totalViews: 0,
-          totalContacts: 0,
-          totalSocial: 0,
-          conversionRate: 0
+          totalCards: 1,
+          totalViews: cardAnalytics.totalViews,
+          todayViews: cardAnalytics.totalViews, // Simplified for now
+          todayContacts: cardAnalytics.totalContacts,
+          conversionRate: cardAnalytics.totalViews > 0
+            ? ((cardAnalytics.totalContacts / cardAnalytics.totalViews) * 100).toFixed(1)
+            : '0'
         });
-      }
-      setIsLoading(false);
-    };
 
-    loadAnalytics();
+        setChartData(cardAnalytics.dailyStats);
+      }
+
+      setLastUpdate(new Date());
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+      // Set zero values when API fails
+      setAnalytics({
+        totalCards: 0,
+        totalViews: 0,
+        todayViews: 0,
+        todayContacts: 0,
+        conversionRate: '0'
+      });
+      setChartData([]);
+    }
+    setIsLoading(false);
   }, [analyticsMode, selectedAnalyticsCardId]);
+
+  // Refresh analytics data
+  const refreshAnalytics = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadAnalytics();
+    setIsRefreshing(false);
+  }, [loadAnalytics]);
+
+  // Load data on mount and mode change
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
+  // Auto-refresh every 5 minutes for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (analyticsMode === 'global' || (analyticsMode === 'individual' && selectedAnalyticsCardId)) {
+        refreshAnalytics();
+      }
+    }, analyticsService.UPDATE_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [analyticsMode, selectedAnalyticsCardId, refreshAnalytics]);
 
   // Use analytics data directly, default to 0 if not available
   const totalViews = analytics?.totalViews || 0;
-  const totalClicks = analytics?.totalContacts || 0;
-  const conversionRate = analytics?.conversionRate || 0;
+  const totalClicks = analytics?.todayContacts || 0;
+  const totalSocial = Math.floor(totalClicks * 0.6); // Estimate social clicks
+  const conversionRate = analytics?.conversionRate || '0';
 
-  // Translate the data keys (Days of week) for the chart
-  const translatedData = data.map(item => ({
-    ...item,
-    displayDate: t.days[item.date] || item.date
-  }));
+  // Use real chart data or fallback to empty data
+  const translatedData = chartData.length > 0 ? chartData : [];
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Analytics Mode Toggle */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/30 border border-slate-700 rounded-xl p-4">
         <div className="flex items-center gap-4">
+          {/* Refresh Button */}
+          <button
+            onClick={refreshAnalytics}
+            disabled={isRefreshing}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+              isRefreshing
+                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
+            }`}
+            title="Actualizar datos en tiempo real"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+          </button>
+
           <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
             <button
               onClick={() => onAnalyticsModeChange?.('global')}
@@ -149,6 +201,14 @@ const Analytics: React.FC<AnalyticsProps> = ({
             </>
           )}
         </div>
+
+        {/* Last Update Info */}
+        {lastUpdate && (
+          <div className="text-xs text-slate-400 flex items-center gap-2">
+            <Activity className="w-3 h-3" />
+            Última actualización: {lastUpdate.toLocaleTimeString('es-ES')}
+          </div>
+        )}
       </div>
 
       {/* Show analytics only if in global mode OR individual mode with selected card */}
@@ -157,28 +217,32 @@ const Analytics: React.FC<AnalyticsProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Stat Cards */}
             <StatCard
-              title="Vistas Totales"
+              title={analyticsMode === 'global' ? "Vistas Totales" : "Vistas de Tarjeta"}
               value={totalViews}
               icon={<Eye className="text-blue-400" />}
-              trend="+12%"
+              trend="En tiempo real"
+              subtitle={analyticsMode === 'global' ? "Todas las tarjetas" : "Esta tarjeta"}
             />
             <StatCard
               title="Contactos"
               value={totalClicks}
               icon={<Users className="text-emerald-400" />}
-              trend="+5%"
+              trend="Hoy"
+              subtitle="Información guardada"
             />
             <StatCard
               title="Redes Sociales"
-              value={analytics?.totalSocial || 0}
+              value={totalSocial}
               icon={<Share2 className="text-purple-400" />}
-              trend="+8%"
+              trend="Estimado"
+              subtitle="Clicks en enlaces"
             />
             <StatCard
               title="Conversión"
               value={`${conversionRate}%`}
               icon={<TrendingUp className="text-orange-400" />}
-              trend="+2.1%"
+              trend="Tasa actual"
+              subtitle="Contactos/Vistas"
             />
       </div>
 
@@ -267,7 +331,19 @@ const Analytics: React.FC<AnalyticsProps> = ({
   );
 };
 
-const StatCard = ({ title, value, icon, trend }: { title: string, value: string | number, icon: React.ReactNode, trend: string }) => (
+const StatCard = ({
+  title,
+  value,
+  icon,
+  trend,
+  subtitle
+}: {
+  title: string,
+  value: string | number,
+  icon: React.ReactNode,
+  trend: string,
+  subtitle?: string
+}) => (
   <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5 backdrop-blur-sm hover:border-slate-600 transition-colors">
     <div className="flex justify-between items-start mb-4">
       <div className="p-2 bg-slate-700/50 rounded-lg">{icon}</div>
@@ -275,6 +351,7 @@ const StatCard = ({ title, value, icon, trend }: { title: string, value: string 
     </div>
     <div className="text-2xl font-bold text-white mb-1">{value}</div>
     <div className="text-sm text-slate-400">{title}</div>
+    {subtitle && <div className="text-xs text-slate-500 mt-1">{subtitle}</div>}
   </div>
 );
 

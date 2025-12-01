@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { DigitalCard, Language } from '../../types';
 import { generatePalette } from '../../lib/colorUtils';
 import { downloadVCard } from '../../lib/vcardUtils';
 import { translations } from '../../lib/i18n';
 import { formatFullName } from '../../lib/nameUtils';
+import { useAutoTracking } from '../../services/analyticsService';
 import { 
   Linkedin, 
   MessageCircle, 
@@ -32,6 +33,16 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
   if (!card) {
     return <div>Loading...</div>;
   }
+
+  // Analytics tracking
+  const tracking = useAutoTracking(card.id);
+
+  // Track view when component mounts (only in live mode)
+  useEffect(() => {
+    if (mode === 'live' && card.id) {
+      tracking.trackView();
+    }
+  }, [card.id, mode, tracking]);
 
   // Determine configuration (fallback to defaults if partial)
   const config = card.themeConfig || {
@@ -89,6 +100,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
 
   const handleSaveContact = () => {
     downloadVCard(card);
+    tracking.trackContact('vcard');
   };
 
   const handleShare = async () => {
@@ -99,6 +111,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
           text: card.bio,
           url: window.location.href,
         });
+        tracking.trackShare('native-share');
       } catch (err) {
         console.log('Error sharing:', err);
       }
@@ -228,13 +241,14 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest opacity-60 mb-3" style={{ color: palette.colors.text }}>{t.connect}</h3>
                 {(card.socialLinks || []).filter(l => l.active).map(link => (
-                  <a 
+                  <a
                     key={link.id}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => tracking.trackSocial(link.platform, link.url)}
                     className="flex items-center justify-between p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] group"
-                    style={{ 
+                    style={{
                       backgroundColor: palette.colors.surface,
                       borderColor: palette.colors.surfaceBorder
                     }}

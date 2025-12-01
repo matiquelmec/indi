@@ -15,7 +15,6 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import Analytics from './Analytics';
-import { MOCK_ANALYTICS } from '../../constants';
 import { translations } from '../../lib/i18n';
 
 interface DashboardProps {
@@ -129,7 +128,6 @@ const Dashboard: React.FC<DashboardProps> = ({
            {t.performance}
         </h2>
         <Analytics
-          data={MOCK_ANALYTICS}
           language={language}
           analyticsMode={analyticsMode}
           onAnalyticsModeChange={onAnalyticsModeChange}

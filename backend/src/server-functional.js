@@ -480,6 +480,52 @@ app.get('/api/analytics/individual/:cardId', async (req, res) => {
   }
 });
 
+// Get chart data for dashboard
+app.get('/api/analytics/dashboard/chart', async (req, res) => {
+  try {
+    // Get last 7 days of data
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const { data: events } = await supabase
+      .from('analytics_events')
+      .select('created_at, event_type')
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    // Process events into daily stats
+    const dailyStats = {};
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    // Initialize last 7 days with zero values
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayName = days[date.getDay()];
+      dailyStats[dayName] = { date: dayName, views: 0, clicks: 0, contacts: 0 };
+    }
+
+    // Process actual events
+    events?.forEach(event => {
+      const eventDate = new Date(event.created_at);
+      const dayName = days[eventDate.getDay()];
+
+      if (dailyStats[dayName]) {
+        if (event.event_type === 'view') dailyStats[dayName].views++;
+        if (event.event_type === 'social_click') dailyStats[dayName].clicks++;
+        if (event.event_type === 'contact_save') dailyStats[dayName].contacts++;
+      }
+    });
+
+    res.json({
+      chartData: Object.values(dailyStats)
+    });
+  } catch (error) {
+    console.error('Chart data error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Track analytics event
 app.post('/api/analytics/track', async (req, res) => {
   try {
