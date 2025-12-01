@@ -27,6 +27,14 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Ensure UTF-8 encoding
+app.use((req, res, next) => {
+  req.setEncoding('utf8');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 // Disable cache in development
 app.use((req, res, next) => {

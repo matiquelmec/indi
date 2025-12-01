@@ -283,7 +283,7 @@ function AppContent() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${id}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
         }
       });
 
