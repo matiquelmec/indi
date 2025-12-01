@@ -66,5 +66,43 @@ export interface AnalyticsData {
 
 export type Language = 'es' | 'en';
 
-// Updated ViewState to support SaaS flow
+export interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  createdAt: string;
+  emailVerified?: boolean;
+}
+
+// Legacy ViewState - being replaced by router system
 export type ViewState = 'landing' | 'auth' | 'dashboard' | 'editor' | 'live';
+
+// New Router Types
+export type RouteComponent =
+  | 'landing'
+  | 'auth'
+  | 'auth-callback'
+  | 'dashboard'
+  | 'dashboard-analytics'
+  | 'editor'
+  | 'editor-preview'
+  | 'settings'
+  | 'settings-billing'
+  | 'settings-account'
+  | 'upgrade'
+  | 'help'
+  | 'help-topic'
+  | 'profile'
+  | 'card-live'
+  | 'card-legacy';
+
+export interface NavigationState {
+  currentComponent: RouteComponent;
+  params: Record<string, string>;
+  query: URLSearchParams;
+  isAuthenticated: boolean;
+  user?: User | null;
+}
