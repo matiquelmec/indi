@@ -154,23 +154,7 @@ function AppContent() {
         if (response.ok) {
           const backendCards = await response.json();
 
-          // 🚨 SECURITY FIX: Filter cards by current authenticated user
-          if (isAuthenticated && user?.email) {
-            console.log('🔒 Filtering cards for user:', user.email);
-            const userCards = backendCards.filter((card: DigitalCard) => {
-              // Filter by email match - only show user's own cards
-              const isUserCard = card.email === user.email;
-              if (!isUserCard) {
-                console.log('🚫 Filtered out card:', card.firstName, card.lastName, '(', card.email, ')');
-              }
-              return isUserCard;
-            });
-            console.log('✅ User cards loaded:', userCards.length);
-            setCards(userCards);
-          } else {
-            console.log('⚠️ No authenticated user - showing no cards for security');
-            setCards([]);
-          }
+          setCards(backendCards);
         } else {
           console.error('Failed to load cards from backend');
           // Fallback to localStorage only if backend fails
@@ -418,16 +402,12 @@ function AppContent() {
     setCurrentView('live');
     setIsExternalCard(false); // Reset external flag for owned cards
 
-    // 🚨 SECURITY FIX: Use user-specific URL instead of generic card URL
-    // This prevents redirection to production and maintains user context
-    if (isAuthenticated && user) {
-      const userSlug = user.email?.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const userCardUrl = `/${userSlug}/${card.customSlug || card.id}`;
-      window.history.pushState({}, '', userCardUrl);
-      console.log('🔒 Safe live view URL:', userCardUrl);
-    } else {
-      console.log('⚠️ No authenticated user - staying on current view for security');
-    }
+    // Update URL for live view using backend-generated URL
+    const newUrl = card.customSlug
+      ? `/card/${card.customSlug}`
+      : `/card/${card.id}`;
+
+    window.history.pushState({}, '', newUrl);
   };
 
   // Helper function to generate shareable URLs
