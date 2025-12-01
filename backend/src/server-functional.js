@@ -251,6 +251,50 @@ app.put('/api/cards/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log('✏️ BACKEND PUT /api/cards/' + id);
+    console.log('✏️ RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
+
+    // Check if names are being changed to regenerate URLs if needed
+    let customSlug = req.body.customSlug;
+    let publishedUrl = req.body.publishedUrl;
+
+    // If firstName or lastName are being changed and no custom slug is provided, regenerate URLs
+    if (req.body.firstName && req.body.lastName && !req.body.customSlug) {
+      // Get existing card data first
+      const { data: existingCard } = await supabase
+        .from('cards')
+        .select('first_name, last_name, custom_slug')
+        .eq('id', id)
+        .single();
+
+      // Check if names have actually changed
+      const namesChanged = existingCard && (
+        existingCard.first_name !== req.body.firstName ||
+        existingCard.last_name !== req.body.lastName
+      );
+
+      if (namesChanged) {
+        // Get existing slugs to ensure uniqueness (excluding current card)
+        const { data: existingCards, error: slugError } = await supabase
+          .from('cards')
+          .select('custom_slug')
+          .not('custom_slug', 'is', null)
+          .neq('id', id); // Exclude current card
+
+        if (slugError) {
+          console.error('Error fetching existing slugs:', slugError);
+        } else {
+          const existingSlugs = existingCards?.map(card => card.custom_slug).filter(Boolean) || [];
+          customSlug = createUniqueSlug(req.body.firstName, req.body.lastName, existingSlugs);
+
+          if (customSlug) {
+            publishedUrl = `https://frontindi.vercel.app/card/${customSlug}`;
+            console.log(`🔄 Regenerated unique slug due to name change: ${customSlug} -> ${publishedUrl}`);
+          }
+        }
+      }
+    }
+
     // Map frontend camelCase to database snake_case
     const cardData = {
       user_id: req.body.userId || null,
@@ -268,6 +312,8 @@ app.put('/api/cards/:id', async (req, res) => {
       contact_fields: req.body.contactFields,
       theme_config: req.body.themeConfig,
       is_published: req.body.isPublished,
+      published_url: publishedUrl,
+      custom_slug: customSlug,
       views_count: req.body.viewsCount || 0
     };
 
@@ -304,6 +350,8 @@ app.put('/api/cards/:id', async (req, res) => {
       contactFields: updatedCard.contact_fields,
       themeConfig: updatedCard.theme_config,
       isPublished: updatedCard.is_published,
+      publishedUrl: updatedCard.published_url,
+      customSlug: updatedCard.custom_slug,
       viewsCount: updatedCard.views_count,
       createdAt: updatedCard.created_at,
       updatedAt: updatedCard.updated_at
