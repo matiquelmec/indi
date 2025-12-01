@@ -121,7 +121,36 @@ app.get('/api/cards', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Error fetching cards' });
     }
 
-    return res.json(cards || []);
+    // Map database snake_case to frontend camelCase
+    const mappedCards = (cards || []).map(card => ({
+      id: card.id,
+      userId: card.user_id,
+      firstName: card.first_name,
+      lastName: card.last_name,
+      title: card.title,
+      company: card.company,
+      phone: card.phone,
+      email: card.email,
+      website: card.website,
+      bio: card.bio,
+      avatarUrl: card.avatar_url,
+      coverUrl: card.cover_url,
+      socialLinks: card.social_links,
+      contactFields: card.contact_fields,
+      themeConfig: card.theme_config,
+      isPublished: card.is_published,
+      publishedUrl: card.published_url,
+      customSlug: card.custom_slug,
+      viewsCount: card.views_count,
+      subscriptionStatus: card.subscription_status || 'free',
+      trialEndsAt: card.trial_ends_at ? new Date(card.trial_ends_at).getTime() : undefined,
+      planType: card.plan_type || 'free',
+      isActive: true,
+      createdAt: card.created_at,
+      updatedAt: card.updated_at
+    }));
+
+    return res.json(mappedCards);
   } catch (error) {
     console.error('Cards error:', error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -222,7 +251,36 @@ app.get('/api/cards/:id/public', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Card not found or not public' });
     }
 
-    return res.json(card);
+    // Map database snake_case to frontend camelCase for public card
+    const mappedCard = {
+      id: card.id,
+      userId: card.user_id,
+      firstName: card.first_name,
+      lastName: card.last_name,
+      title: card.title,
+      company: card.company,
+      phone: card.phone,
+      email: card.email,
+      website: card.website,
+      bio: card.bio,
+      avatarUrl: card.avatar_url,
+      coverUrl: card.cover_url,
+      socialLinks: card.social_links,
+      contactFields: card.contact_fields,
+      themeConfig: card.theme_config,
+      isPublished: card.is_published,
+      publishedUrl: card.published_url,
+      customSlug: card.custom_slug,
+      viewsCount: card.views_count,
+      subscriptionStatus: card.subscription_status || 'free',
+      trialEndsAt: card.trial_ends_at ? new Date(card.trial_ends_at).getTime() : undefined,
+      planType: card.plan_type || 'free',
+      isActive: true,
+      createdAt: card.created_at,
+      updatedAt: card.updated_at
+    };
+
+    return res.json(mappedCard);
   } catch (error) {
     console.error('Public card error:', error);
     return res.status(500).json({ error: 'Internal server error' });

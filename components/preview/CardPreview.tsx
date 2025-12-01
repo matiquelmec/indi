@@ -3,6 +3,7 @@ import { DigitalCard, Language } from '../../types';
 import { generatePalette } from '../../lib/colorUtils';
 import { downloadVCard } from '../../lib/vcardUtils';
 import { translations } from '../../lib/i18n';
+import { formatFullName } from '../../lib/nameUtils';
 import { 
   Linkedin, 
   MessageCircle, 
@@ -94,7 +95,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${card.firstName} ${card.lastName}`,
+          title: formatFullName(card.firstName, card.lastName),
           text: card.bio,
           url: window.location.href,
         });
@@ -162,7 +163,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
               className="text-3xl font-bold mb-1.5 drop-shadow-md transition-colors"
               style={{ color: palette.colors.text }}
             >
-              {card.firstName} {card.lastName}
+              {formatFullName(card.firstName, card.lastName)}
             </h2>
             <p 
               className="text-base font-medium uppercase tracking-wider mb-8 transition-colors"

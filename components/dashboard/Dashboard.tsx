@@ -1,5 +1,6 @@
 import React from 'react';
 import { DigitalCard, Language } from '../../types';
+import { formatFullName } from '../../lib/nameUtils';
 import { 
   Plus, 
   MoreVertical, 
@@ -210,7 +211,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onEdit, onDelete, onView, onU
 
          <div className="mb-6">
            <h3 className="text-xl font-bold text-white leading-tight mb-1 truncate">
-             {card.firstName || 'Untitled'} {card.lastName}
+             {formatFullName(card.firstName, card.lastName)}
            </h3>
            <p className="text-sm text-emerald-400 font-medium truncate mb-0.5">{card.title || 'No Title'}</p>
            <p className="text-xs text-slate-500 truncate">{card.company || 'No Company'}</p>
