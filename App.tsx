@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LayoutDashboard, CreditCard, LogOut, Menu, X, Eye, Edit3, Languages, ArrowRight } from 'lucide-react';
 import SmartParticles from './components/visuals/SmartParticles';
 import CardPreview from './components/preview/CardPreview';
@@ -33,6 +33,12 @@ function AppContent() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+
+  // Auto-save State & Refs
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingCardRef = useRef<DigitalCard | null>(null);
 
   // Analytics State
   const [analyticsMode, setAnalyticsMode] = useState<'global' | 'individual'>('global');
@@ -223,6 +229,15 @@ function AppContent() {
     }
   }, [isAuthenticated, authLoading, currentView]);
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   // --- AUTH HANDLERS ---
   const handleLoginSuccess = (user: any) => {
     console.log('✅ Login successful:', user);
@@ -308,7 +323,18 @@ function AppContent() {
 
   // Helper function to generate shareable URLs
   const generateShareableUrl = (card: DigitalCard): string => {
-    return generateProfileUrl(card.firstName || '', card.lastName || '', card.id);
+    const url = generateProfileUrl(card.firstName || '', card.lastName || '', card.id);
+    console.log('🔗 GENERATE SHAREABLE URL:', {
+      card: {
+        id: card.id,
+        firstName: card.firstName,
+        lastName: card.lastName,
+        customSlug: card.customSlug,
+        publishedUrl: card.publishedUrl
+      },
+      generatedUrl: url
+    });
+    return url;
   };
 
   // Check if current user is the owner of the active card
@@ -350,8 +376,10 @@ function AppContent() {
   };
 
   // --- EDITOR HANDLERS ---
-  const handleSaveCard = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
-    setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
+
+  // Immediate save to backend (no debounce) - for manual saves and publishing
+  const saveCardToBackend = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
+    console.log('🔄 BACKEND SAVE:', cardToSave.id, cardToSave.firstName, cardToSave.lastName);
 
     // Solo guardar en backend si NO es temporal
     if (!cardToSave.isTemporary) {
@@ -360,7 +388,7 @@ function AppContent() {
         const existingCard = cards.find(c => c.id === cardToSave.id);
 
         if (existingCard && !existingCard.isNew && !existingCard.isTemporary) {
-          // Update existing card (PUT) - only if it exists in backend
+          // Update existing card (PUT)
           const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardToSave.id}`, {
             method: 'PUT',
             headers: {
@@ -370,13 +398,11 @@ function AppContent() {
           });
 
           if (response.ok) {
-            // Update local state with backend response that includes all fields
             const updatedCard = await response.json();
-            setCards(prev => prev.map(c => c.id === cardToSave.id ? updatedCard : c));
-            return updatedCard; // Return the updated card from backend
+            console.log('✅ BACKEND UPDATE SUCCESS:', updatedCard.id);
+            return updatedCard;
           } else {
-            console.error('Failed to update card in backend');
-            // If PUT fails, try POST instead (card might not exist in backend)
+            // If PUT fails, try POST (card might not exist in backend)
             const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
               method: 'POST',
               headers: {
@@ -387,7 +413,7 @@ function AppContent() {
 
             if (postResponse.ok) {
               const savedCard = await postResponse.json();
-              setCards(prev => prev.map(c => c.id === cardToSave.id ? savedCard : c));
+              console.log('✅ BACKEND CREATE SUCCESS:', savedCard.id);
               return savedCard;
             }
           }
@@ -403,27 +429,93 @@ function AppContent() {
 
           if (response.ok) {
             const savedCard = await response.json();
-            // Update local state with backend response
-            setCards(prev => prev.map(c => c.id === cardToSave.id ? savedCard : c));
+            console.log('✅ BACKEND CREATE SUCCESS:', savedCard.id);
             return savedCard;
-          } else {
-            console.error('Failed to save card to backend');
           }
         }
 
-        // Also save to localStorage as fallback
-        saveCardToStorage(cardToSave);
+        saveCardToStorage(cardToSave); // Fallback
       } catch (error) {
-        console.error('Error saving card:', error);
-        // Fallback to localStorage only
-        saveCardToStorage(cardToSave);
+        console.error('❌ BACKEND SAVE ERROR:', error);
+        saveCardToStorage(cardToSave); // Fallback
       }
     }
 
-    return cardToSave; // Return the card as-is if not saved to backend
+    return cardToSave;
+  };
+
+  // Debounced auto-save function
+  const debouncedSave = useCallback(async (cardToSave: DigitalCard) => {
+    // Clear any pending timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Store the pending card
+    pendingCardRef.current = cardToSave;
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(async () => {
+      const cardToSaveNow = pendingCardRef.current;
+      if (!cardToSaveNow) return;
+
+      setIsSaving(true);
+      console.log('⏱️ DEBOUNCED SAVE EXECUTING:', cardToSaveNow.firstName, cardToSaveNow.lastName);
+
+      try {
+        const savedCard = await saveCardToBackend(cardToSaveNow);
+        setCards(prev => prev.map(c => c.id === savedCard.id ? savedCard : c));
+        setLastSaveTime(new Date());
+        console.log('✅ AUTO-SAVE SUCCESS:', savedCard.id);
+      } catch (error) {
+        console.error('❌ AUTO-SAVE ERROR:', error);
+      } finally {
+        setIsSaving(false);
+        pendingCardRef.current = null;
+      }
+    }, 800); // 800ms debounce delay
+  }, [cards]);
+
+  // Force save immediately (for publishing, manual save)
+  const forceSave = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
+    // Clear any pending debounced save
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    setIsSaving(true);
+    console.log('⚡ FORCE SAVE:', cardToSave.firstName, cardToSave.lastName);
+
+    try {
+      const savedCard = await saveCardToBackend(cardToSave);
+      setCards(prev => prev.map(c => c.id === savedCard.id ? savedCard : c));
+      setLastSaveTime(new Date());
+      return savedCard;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Smart save handler - uses debouncing for auto-saves, immediate for manual saves
+  const handleSaveCard = async (cardToSave: DigitalCard, immediate = false): Promise<DigitalCard> => {
+    console.log('💾 SAVE CARD:', immediate ? '⚡IMMEDIATE' : '⏱️DEBOUNCED', cardToSave.firstName, cardToSave.lastName);
+
+    // Update local state immediately for responsive UI
+    setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
+
+    if (immediate) {
+      // Immediate save (for publishing, manual save buttons)
+      return await forceSave(cardToSave);
+    } else {
+      // Debounced auto-save (for typing)
+      debouncedSave(cardToSave);
+      return cardToSave; // Return immediately, save happens in background
+    }
   };
 
   const handlePublish = async () => {
+    console.log('🚀 PUBLISH START - activeCard:', activeCard);
     if (!activeCard) {
       console.error('No active card to publish');
       return;
@@ -445,6 +537,14 @@ function AppContent() {
       activeCard.lastName || ''
     );
 
+    console.log('📝 GENERATED DATA:', {
+      publishedUrl,
+      customSlug,
+      firstName: activeCard.firstName,
+      lastName: activeCard.lastName,
+      id: activeCard.id
+    });
+
     const publishedCard = {
       ...activeCard,
       isPublished: true,
@@ -453,8 +553,14 @@ function AppContent() {
       isTemporary: false
     };
 
-    // Save to backend and wait for response with updated data
-    const savedCard = await handleSaveCard(publishedCard);
+    console.log('📤 SENDING TO BACKEND:', publishedCard);
+
+    // Save to backend and wait for response with updated data (IMMEDIATE save for publishing)
+    const savedCard = await handleSaveCard(publishedCard, true);
+
+    console.log('📥 RECEIVED FROM BACKEND:', savedCard);
+    console.log('🔍 CUSTOM SLUG IN RESPONSE:', savedCard.customSlug);
+    console.log('🔍 PUBLISHED URL IN RESPONSE:', savedCard.publishedUrl);
 
     // Update selected card to ensure we have the latest data with customSlug
     setSelectedCardId(savedCard.id);
@@ -472,7 +578,7 @@ function AppContent() {
   const handleUpgradeSuccess = () => {
     if (cardToUpgrade) {
       const upgradedCard: DigitalCard = { ...cardToUpgrade, subscriptionStatus: 'active', planType: 'pro' };
-      handleSaveCard(upgradedCard);
+      handleSaveCard(upgradedCard, true); // Immediate save for upgrade
     }
     setShowPricingModal(false);
     setCardToUpgrade(null);
@@ -634,14 +740,34 @@ function AppContent() {
               <div className="flex flex-col md:flex-row gap-8 h-full max-w-[1600px] mx-auto w-full animate-slide-up">
                 <div className="flex-1 min-w-0 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
                   <div className="p-4 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center md:hidden">
-                      <h2 className="text-sm font-semibold text-white">Editor</h2>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-sm font-semibold text-white">Editor</h2>
+
+                        {/* Auto-save Indicator */}
+                        {(isSaving || lastSaveTime) && (
+                          <div className="flex items-center gap-1">
+                            {isSaving ? (
+                              <>
+                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-slate-400">Guardando</span>
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                <span className="text-xs text-slate-400">Guardado</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                       <button onClick={() => setShowMobilePreview(true)} className="flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded-full text-xs border border-emerald-600/30">
                         <Eye size={12} /> Preview
                       </button>
                   </div>
                   <CardEditor
                     card={activeCard}
-                    setCard={(updater) => { const updated = typeof updater === 'function' ? updater(activeCard) : updater; handleSaveCard(updated); }}
+                    setCard={(updater) => { const updated = typeof updater === 'function' ? updater(activeCard) : updater; handleSaveCard(updated); }} // Auto-save with debouncing
                     onPublish={handlePublish}
                     isPublishing={isPublishing}
                     language={language}

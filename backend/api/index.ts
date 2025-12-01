@@ -131,6 +131,9 @@ app.get('/api/cards', async (req: Request, res: Response) => {
 // Create new card
 app.post('/api/cards', async (req: Request, res: Response) => {
   try {
+    console.log('🆕 BACKEND POST /api/cards');
+    console.log('🆕 RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
+
     // Map frontend camelCase to database snake_case
     const cardData = {
       user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
@@ -189,6 +192,8 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       updatedAt: newCard.updated_at
     };
 
+    console.log('✅ BACKEND POST RESPONSE:', JSON.stringify(responseCard, null, 2));
+
     return res.status(201).json(responseCard);
   } catch (error) {
     console.error('Card creation error:', error);
@@ -228,6 +233,10 @@ app.get('/api/cards/:id/public', async (req: Request, res: Response) => {
 app.put('/api/cards/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    console.log('🔄 BACKEND PUT /api/cards/:id');
+    console.log('🔄 CARD ID:', id);
+    console.log('🔄 RECEIVED PAYLOAD:', JSON.stringify(req.body, null, 2));
 
     // Map frontend camelCase to database snake_case
     const cardData = {
@@ -291,6 +300,8 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
       createdAt: updatedCard.created_at,
       updatedAt: updatedCard.updated_at
     };
+
+    console.log('✅ BACKEND PUT RESPONSE:', JSON.stringify(responseCard, null, 2));
 
     return res.json(responseCard);
   } catch (error) {
