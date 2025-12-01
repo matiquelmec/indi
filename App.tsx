@@ -33,6 +33,7 @@ function AppContent() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [publishedCard, setPublishedCard] = useState<DigitalCard | null>(null);
 
   // Auto-save State & Refs
   const [isSaving, setIsSaving] = useState(false);
@@ -541,17 +542,16 @@ function AppContent() {
       // Backend will generate customSlug and publishedUrl with uniqueness logic
     };
 
-    console.log('📤 SENDING TO BACKEND:', publishedCard);
+    // Publishing card to backend
 
     // Save to backend and wait for response with updated data (IMMEDIATE save for publishing)
     const savedCard = await handleSaveCard(publishedCard, true);
 
-    console.log('📥 RECEIVED FROM BACKEND:', savedCard);
-    console.log('🔍 CUSTOM SLUG IN RESPONSE:', savedCard.customSlug);
-    console.log('🔍 PUBLISHED URL IN RESPONSE:', savedCard.publishedUrl);
-
     // Update selected card to ensure we have the latest data with customSlug
     setSelectedCardId(savedCard.id);
+
+    // Store the published card for ShareModal
+    setPublishedCard(savedCard);
 
     setIsPublishing(false);
     setShowShareModal(true);
@@ -809,7 +809,7 @@ function AppContent() {
         </div>
       )}
 
-      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={activeCard ? generateShareableUrl(activeCard) : ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
+      {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => { setShowShareModal(false); setPublishedCard(null); }} url={publishedCard ? generateShareableUrl(publishedCard) : ''} onOpenLive={() => { setShowShareModal(false); setCurrentView('live'); }} language={language} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
 
     </div>
