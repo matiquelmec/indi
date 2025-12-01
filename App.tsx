@@ -13,10 +13,29 @@ import { getStoredCards, saveCardToStorage, deleteCardFromStorage, createNewCard
 import { translations } from './lib/i18n';
 import { generateUserSlug } from './lib/urlUtils';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+// New routing system (overlay mode)
+import { useAuthRouter } from './hooks/useRouter';
+import { getUserSlug } from './lib/userUtils';
 
 function AppContent() {
   // --- AUTH STATE ---
   const { user, isAuthenticated, signOut, loading: authLoading } = useAuth();
+
+  // New routing system (overlay mode - gradual migration)
+  // const { navigate } = useAuthRouter(isAuthenticated, user); // DISABLED for now
+
+  // Helper functions for user-specific routing (ACTIVE)
+  const getUserDashboardUrl = (user: any): string => {
+    if (!user?.email) return '/dashboard'; // fallback
+    const userSlug = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+    return `/${userSlug}/dashboard`;
+  };
+
+  const getUserEditorUrl = (user: any, cardId?: string): string => {
+    if (!user?.email) return cardId ? `/editor/${cardId}` : '/editor'; // fallback
+    const userSlug = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+    return cardId ? `/${userSlug}/editor/${cardId}` : `/${userSlug}/editor`;
+  };
 
   // --- VIEW STATE ---
   const [currentView, setCurrentView] = useState<ViewState>('landing');
@@ -155,14 +174,46 @@ function AppContent() {
     const checkRouting = () => {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
+      const pathSegments = path.split('/').filter(Boolean);
 
-      // Support both new and legacy URL formats
-      // New format: /card/[id] or /u/[username]
-      // Legacy format: ?shareId=[id]
+      console.log('🔍 Checking route:', path, 'segments:', pathSegments);
 
+      // NEW: Handle user-scoped administrative routes
+      if (pathSegments.length >= 2) {
+        const [userSlug, action, resourceId] = pathSegments;
+
+        // Check if this matches current user's slug
+        if (isAuthenticated && user) {
+          const currentUserSlug = user.email?.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+          if (userSlug === currentUserSlug) {
+            console.log('📍 User-scoped route detected:', userSlug, action, resourceId);
+
+            switch (action) {
+              case 'dashboard':
+                setCurrentView('dashboard');
+                return;
+              case 'editor':
+                setCurrentView('editor');
+                if (resourceId) {
+                  // Load specific card for editing
+                  setSelectedCardId(resourceId);
+                  console.log('🎯 Setting card for editing:', resourceId);
+                }
+                return;
+              case 'settings':
+                // Future: handle settings routes
+                console.log('⚙️ Settings route (not implemented)');
+                return;
+            }
+          }
+        }
+      }
+
+      // Support legacy and card viewing formats
       let cardId = null;
 
-      // Check new path-based routing
+      // Check card viewing routes
       if (path.startsWith('/card/')) {
         cardId = path.split('/card/')[1];
       } else if (path.startsWith('/u/')) {
@@ -220,7 +271,7 @@ function AppContent() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isAuthenticated, user]); // Updated dependencies for routing
 
   // Auto-redirect based on auth state
   useEffect(() => {
@@ -250,7 +301,14 @@ function AppContent() {
   const handleLoginSuccess = (user: any) => {
     console.log('✅ Login successful:', user);
 
-    // Always go to dashboard after login
+    // NEW: Generate user-specific dashboard URL
+    const userDashboardUrl = getUserDashboardUrl(user);
+    console.log('🔀 Redirecting to user dashboard:', userDashboardUrl);
+
+    // Update the URL to user-specific path (e.g., /demo/dashboard for demo@indi.com)
+    window.history.pushState({}, '', userDashboardUrl);
+
+    // Keep existing view system for backward compatibility
     setCurrentView('dashboard');
   };
 
@@ -276,11 +334,25 @@ function AppContent() {
     setCards(prev => [...prev, { ...newCard, isTemporary: true }]);
     setSelectedCardId(newCard.id);
     setCurrentView('editor');
+
+    // NEW: Update URL to user-specific editor
+    if (isAuthenticated && user) {
+      const userEditorUrl = getUserEditorUrl(user);
+      window.history.pushState({}, '', userEditorUrl);
+      console.log('🔀 Navigating to user editor:', userEditorUrl);
+    }
   };
 
   const handleEditCard = (card: DigitalCard) => {
     setSelectedCardId(card.id);
     setCurrentView('editor');
+
+    // NEW: Update URL to user-specific editor with card ID
+    if (isAuthenticated && user) {
+      const userEditorUrl = getUserEditorUrl(user, card.id);
+      window.history.pushState({}, '', userEditorUrl);
+      console.log('🔀 Navigating to user editor for card:', userEditorUrl);
+    }
   };
 
   const handleDeleteCard = async (id: string) => {
@@ -361,8 +433,15 @@ function AppContent() {
     setIsMobileMenuOpen(false);
     setIsExternalCard(false); // Reset external flag
 
-    // Clean URL when going back to dashboard
-    window.history.pushState({}, '', '/');
+    // NEW: Update URL to user-specific dashboard
+    if (isAuthenticated && user) {
+      const userDashboardUrl = getUserDashboardUrl(user);
+      window.history.pushState({}, '', userDashboardUrl);
+      console.log('🔀 Navigating to user dashboard:', userDashboardUrl);
+    } else {
+      // Fallback to root for unauthenticated users
+      window.history.pushState({}, '', '/');
+    }
   };
 
   const handleGoToEditor = () => {
@@ -375,6 +454,14 @@ function AppContent() {
     }
     setCurrentView('editor');
     setIsMobileMenuOpen(false);
+
+    // NEW: Update URL to user-specific editor
+    if (isAuthenticated && user) {
+      const cardId = selectedCardId || (cards.length > 0 ? cards[0].id : undefined);
+      const userEditorUrl = getUserEditorUrl(user, cardId);
+      window.history.pushState({}, '', userEditorUrl);
+      console.log('🔀 Navigating to user editor:', userEditorUrl);
+    }
   };
 
   // --- EDITOR HANDLERS ---
