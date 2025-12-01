@@ -11,7 +11,7 @@ import LoginPage from './components/auth/LoginPage';
 import { DigitalCard, Language, ViewState } from './types';
 import { getStoredCards, saveCardToStorage, deleteCardFromStorage, createNewCardTemplate } from './services/storageService';
 import { translations } from './lib/i18n';
-import { generateProfileUrl } from './lib/urlUtils';
+import { generateProfileUrl, generateUserSlug } from './lib/urlUtils';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -51,7 +51,7 @@ function AppContent() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardId}/public`);
       if (response.ok) {
         const card = await response.json();
-        setCards(prev => [...prev.filter(c => c.id !== cardId), card]);
+        setCards(prev => [...(prev || []).filter(c => c.id !== cardId), card]);
         setSelectedCardId(cardId);
         setCurrentView('live');
         setIsExternalCard(true); // Mark as external card
@@ -62,6 +62,27 @@ function AppContent() {
       }
     } catch (error) {
       console.error('Error fetching card:', error);
+      setCurrentView('landing');
+    }
+  };
+
+  // Function to fetch card by slug from backend
+  const fetchCardBySlug = async (slug: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/by-slug/${slug}`);
+      if (response.ok) {
+        const card = await response.json();
+        setCards(prev => [...(prev || []).filter(c => c.id !== card.id), card]);
+        setSelectedCardId(card.id);
+        setCurrentView('live');
+        setIsExternalCard(true); // Mark as external card
+      } else {
+        console.error('Card not found by slug:', slug);
+        // Redirect to 404 or landing page
+        setCurrentView('landing');
+      }
+    } catch (error) {
+      console.error('Error fetching card by slug:', error);
       setCurrentView('landing');
     }
   };
@@ -107,12 +128,16 @@ function AppContent() {
         cardId = path.split('/card/')[1];
       } else if (path.startsWith('/u/')) {
         const username = path.split('/u/')[1];
-        // Find card by username/slug (you can implement username-based lookup later)
-        const cardByUsername = storedCards.find(c =>
-          `${c.firstName || ''}-${c.lastName || ''}`.toLowerCase().replace(/\s+/g, '-') === username
+        // First, try to find card locally using proper slug generation
+        const cardByUsername = cards.find(c =>
+          generateUserSlug(c.firstName || '', c.lastName || '') === username
         );
         if (cardByUsername) {
           cardId = cardByUsername.id;
+        } else {
+          // If not found locally, fetch from backend by slug
+          fetchCardBySlug(username);
+          return; // Exit early since fetchCardBySlug handles the rest
         }
       }
       // Fallback to legacy query param routing
@@ -120,15 +145,15 @@ function AppContent() {
         cardId = params.get('shareId');
         const view = params.get('view');
 
-        if (!cardId && view === 'live' && storedCards.length > 0) {
+        if (!cardId && view === 'live' && cards.length > 0) {
           // Fallback demo
-          cardId = storedCards[0].id;
+          cardId = cards[0].id;
         }
       }
 
       if (cardId) {
         // Check both localStorage and potentially Supabase
-        let sharedCard = storedCards.find(c => c.id === cardId);
+        let sharedCard = cards.find(c => c.id === cardId);
 
         if (sharedCard) {
           setSelectedCardId(sharedCard.id);
@@ -248,25 +273,16 @@ function AppContent() {
     setCurrentView('live');
     setIsExternalCard(false); // Reset external flag for owned cards
 
-    // Update URL for live view
-    const cleanName = `${card.firstName || ''}-${card.lastName || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const hasValidName = cleanName && cleanName.length > 1;
-
-    const newUrl = hasValidName
-      ? `/u/${cleanName}`
-      : `/card/${card.id}`;
+    // Update URL for live view using proper URL generation
+    const fullUrl = generateProfileUrl(card.firstName || '', card.lastName || '', card.id);
+    const newUrl = fullUrl.replace(window.location.origin, '');
 
     window.history.pushState({}, '', newUrl);
   };
 
   // Helper function to generate shareable URLs
   const generateShareableUrl = (card: DigitalCard): string => {
-    const cleanName = `${card.firstName || ''}-${card.lastName || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const hasValidName = cleanName && cleanName.length > 1;
-
-    return hasValidName
-      ? `${window.location.origin}/u/${cleanName}`
-      : `${window.location.origin}/card/${card.id}`;
+    return generateProfileUrl(card.firstName || '', card.lastName || '', card.id);
   };
 
   // Check if current user is the owner of the active card
@@ -285,7 +301,7 @@ function AppContent() {
 
   const handleGoToDashboard = () => {
     // Limpiar tarjetas temporales no publicadas al regresar al dashboard
-    setCards(prev => prev.filter(card => !card.isTemporary));
+    setCards(prev => (prev || []).filter(card => !card.isTemporary));
     setSelectedCardId(null);
     setCurrentView('dashboard');
     setIsMobileMenuOpen(false);
@@ -605,7 +621,7 @@ function AppContent() {
         {currentView === 'dashboard' && (
            <div className="w-full h-full overflow-y-auto scrollbar-hide animate-fade-in">
              <Dashboard
-               cards={cards.filter(card => !card.isTemporary)}
+               cards={(cards || []).filter(card => !card.isTemporary)}
                onCreateNew={handleCreateCard}
                onEdit={handleEditCard}
                onDelete={handleDeleteCard}

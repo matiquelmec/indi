@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
+const { generateUserSlug } = require('./urlUtils');
 
 // Type definitions for Express
 interface Request {
@@ -517,6 +518,73 @@ app.delete('/api/cards/:id', async (req: Request, res: Response) => {
     return res.json({ message: 'Card deleted successfully', id });
   } catch (error) {
     console.error('Delete card error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get public card by slug/username (for /u/username URLs)
+app.get('/api/cards/by-slug/:slug', async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+
+    if (!slug) {
+      return res.status(400).json({ error: 'Slug is required' });
+    }
+
+    // Get all published cards and check which ones match the slug
+    const { data: cards, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('is_published', true);
+
+    if (error) {
+      console.error('Error fetching cards for slug lookup:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    // Find the card that matches the slug by generating slugs for each card
+    const matchingCard = cards?.find(card => {
+      const cardSlug = generateUserSlug(card.first_name || '', card.last_name || '');
+      return cardSlug === slug;
+    });
+
+    if (!matchingCard) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    // Convert snake_case to camelCase for frontend compatibility
+    const transformedCard = {
+      id: matchingCard.id,
+      userId: matchingCard.user_id,
+      firstName: matchingCard.first_name,
+      lastName: matchingCard.last_name,
+      title: matchingCard.title,
+      company: matchingCard.company,
+      bio: matchingCard.bio,
+      email: matchingCard.email,
+      phone: matchingCard.phone,
+      website: matchingCard.website,
+      location: matchingCard.location,
+      avatarUrl: matchingCard.avatar_url,
+      coverUrl: matchingCard.cover_url,
+      socialLinks: matchingCard.social_links || [],
+      contactFields: matchingCard.contact_fields || [],
+      themeConfig: matchingCard.theme_config || {},
+      isPublished: matchingCard.is_published,
+      viewsCount: matchingCard.views_count || 0,
+      createdAt: matchingCard.created_at,
+      updatedAt: matchingCard.updated_at
+    };
+
+    // Increment view count
+    await supabase
+      .from('cards')
+      .update({ views_count: (matchingCard.views_count || 0) + 1 })
+      .eq('id', matchingCard.id);
+
+    return res.json(transformedCard);
+  } catch (error) {
+    console.error('Error in slug lookup:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

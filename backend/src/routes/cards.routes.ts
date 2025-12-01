@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { authMiddleware } from '../middleware/auth';
+import { createUniqueSlug } from '../utils/urlUtils';
 
 const router = express.Router();
 
@@ -117,14 +118,9 @@ router.post('/', authMiddleware, [
       socialLinks = []
     } = req.body;
 
-    // Generate slug
-    const baseSlug = `${firstName}-${lastName}`.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    let slug = baseSlug;
-    let counter = 1;
-    while (cards.find(c => c.slug === slug)) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
+    // Generate unique slug using proper URL normalization
+    const existingSlugs = cards.map(c => c.slug).filter(Boolean);
+    const slug = createUniqueSlug(firstName, lastName, existingSlugs);
 
     const newCard = {
       id: uuidv4(),
