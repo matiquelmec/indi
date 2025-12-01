@@ -60,6 +60,12 @@ function AppContent() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingCardRef = useRef<DigitalCard | null>(null);
 
+  // 🚀 ROBUST STATE: Loading and error handling
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   // Analytics State
   const [analyticsMode, setAnalyticsMode] = useState<'global' | 'individual'>('global');
   const [selectedAnalyticsCardId, setSelectedAnalyticsCardId] = useState<string | null>(null);
@@ -145,31 +151,39 @@ function AppContent() {
     }
   };
 
-  // --- EFFECTS ---
-  useEffect(() => {
-    // Load cards from backend
-    const loadCardsFromBackend = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`);
-        if (response.ok) {
-          const backendCards = await response.json();
-
-          setCards(backendCards);
-        } else {
-          console.error('Failed to load cards from backend');
-          // Fallback to localStorage only if backend fails
-          const storedCards = getStoredCards();
-          setCards(storedCards);
-        }
-      } catch (error) {
-        console.error('Error loading cards from backend:', error);
-        // Fallback to localStorage if backend is not available
+  // 🚀 ROBUST DATA MANAGEMENT: Reusable fetch function with loading state
+  const refetchCardsFromBackend = async () => {
+    setIsRefreshing(true);
+    try {
+      console.log('🔄 Refetching cards from backend...');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`);
+      if (response.ok) {
+        const backendCards = await response.json();
+        setCards(backendCards);
+        console.log('✅ Cards refreshed:', backendCards.length, 'cards loaded');
+        return backendCards;
+      } else {
+        console.error('Failed to refetch cards from backend');
+        // Fallback to localStorage only if backend fails
         const storedCards = getStoredCards();
         setCards(storedCards);
+        return storedCards;
       }
-    };
+    } catch (error) {
+      console.error('Error refetching cards from backend:', error);
+      // Fallback to localStorage if backend is not available
+      const storedCards = getStoredCards();
+      setCards(storedCards);
+      return storedCards;
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
-    loadCardsFromBackend();
+  // --- EFFECTS ---
+  useEffect(() => {
+    // Load cards from backend on initial mount
+    refetchCardsFromBackend();
 
     // Enhanced URL Routing System
     const checkRouting = () => {
@@ -357,9 +371,15 @@ function AppContent() {
   };
 
   const handleDeleteCard = async (id: string) => {
-    if (!id) return;
+    if (!id || isDeleting || deletingCardId) return; // Prevent double deletion
+
+    setIsDeleting(true);
+    setDeletingCardId(id);
+    setError(null); // Clear any previous errors
 
     try {
+      console.log('🗑️ Starting card deletion:', id);
+
       // Delete from backend first
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${id}`, {
         method: 'DELETE',
@@ -369,20 +389,23 @@ function AppContent() {
       });
 
       if (!response.ok) {
-        console.error('Failed to delete card from backend');
-        return; // Don't delete locally if backend fails
+        const errorMessage = `Error eliminando tarjeta: ${response.status} ${response.statusText}`;
+        setError(errorMessage);
+        console.error('Failed to delete card from backend:', errorMessage);
+        return;
       }
 
-      // If backend deletion successful, delete from localStorage
-      const updatedCards = deleteCardFromStorage(id);
-      setCards([...updatedCards]); // Force refresh
+      console.log('✅ Card deleted from backend successfully');
+
+      // 🚀 ROBUST FIX: Force complete data refresh from backend
+      await refetchCardsFromBackend();
 
       // Reset view if deleted card was selected
       if (selectedCardId === id) {
         setSelectedCardId(null);
         setCurrentView('dashboard');
 
-        // NEW: Update URL to user-specific dashboard after deletion
+        // Update URL to user-specific dashboard after deletion
         if (isAuthenticated && user) {
           const userDashboardUrl = getUserDashboardUrl(user);
           window.history.pushState({}, '', userDashboardUrl);
@@ -390,10 +413,18 @@ function AppContent() {
         }
       }
 
-      console.log('Card deleted successfully:', id);
+      console.log('✅ Card deletion completed with fresh data');
     } catch (error) {
-      console.error('Error deleting card:', error);
-      // Optionally show user feedback here
+      const errorMessage = 'Error de conexión al eliminar la tarjeta. Por favor, intenta de nuevo.';
+      setError(errorMessage);
+      console.error('❌ Error deleting card:', error);
+    } finally {
+      setIsDeleting(false);
+      setDeletingCardId(null);
+      // Auto-clear error after 5 seconds
+      if (error) {
+        setTimeout(() => setError(null), 5000);
+      }
     }
   };
 
@@ -904,6 +935,9 @@ function AppContent() {
                onAnalyticsModeChange={setAnalyticsMode}
                selectedAnalyticsCardId={selectedAnalyticsCardId}
                onAnalyticsCardSelect={setSelectedAnalyticsCardId}
+               isDeleting={isDeleting}
+               deletingCardId={deletingCardId}
+               isRefreshing={isRefreshing}
              />
            </div>
         )}
@@ -926,6 +960,32 @@ function AppContent() {
         }
       }} language={language} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
+
+      {/* Error Notification */}
+      {error && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[70] animate-slide-down">
+          <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-2xl border border-red-500 flex items-center gap-3 max-w-md">
+            <div className="w-2 h-2 bg-red-300 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-2 text-red-200 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay for Refreshing */}
+      {isRefreshing && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[60] animate-fade-in">
+          <div className="bg-slate-800/90 backdrop-blur-md text-white px-6 py-3 rounded-lg shadow-2xl border border-slate-600 flex items-center gap-3">
+            <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm font-medium">Actualizando datos...</span>
+          </div>
+        </div>
+      )}
 
     </div>
   );

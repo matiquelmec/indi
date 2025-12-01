@@ -30,6 +30,10 @@ interface DashboardProps {
   onAnalyticsModeChange?: (mode: 'global' | 'individual') => void;
   selectedAnalyticsCardId?: string | null;
   onAnalyticsCardSelect?: (cardId: string | null) => void;
+  // Loading states
+  isDeleting?: boolean;
+  deletingCardId?: string | null;
+  isRefreshing?: boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -43,7 +47,10 @@ const Dashboard: React.FC<DashboardProps> = ({
   analyticsMode = 'global',
   onAnalyticsModeChange,
   selectedAnalyticsCardId,
-  onAnalyticsCardSelect
+  onAnalyticsCardSelect,
+  isDeleting = false,
+  deletingCardId = null,
+  isRefreshing = false
 }) => {
   const t = translations[language].dashboard;
   
@@ -88,14 +95,16 @@ const Dashboard: React.FC<DashboardProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cards.map((card) => (
-              <CardItem 
-                key={card.id} 
-                card={card} 
-                onEdit={() => onEdit(card)} 
+              <CardItem
+                key={card.id}
+                card={card}
+                onEdit={() => onEdit(card)}
                 onDelete={() => onDelete(card.id)}
                 onView={() => onViewLive(card)}
                 onUpgrade={() => onUpgrade(card)}
                 t={t}
+                isDeleting={isDeleting && deletingCardId === card.id}
+                isDisabled={isDeleting || isRefreshing}
               />
             ))}
             
@@ -133,16 +142,27 @@ const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-interface CardItemProps { 
-  card: DigitalCard; 
-  onEdit: () => void; 
+interface CardItemProps {
+  card: DigitalCard;
+  onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
   onUpgrade: () => void;
   t: any;
+  isDeleting?: boolean;
+  isDisabled?: boolean;
 }
 
-const CardItem: React.FC<CardItemProps> = ({ card, onEdit, onDelete, onView, onUpgrade, t }) => {
+const CardItem: React.FC<CardItemProps> = ({
+  card,
+  onEdit,
+  onDelete,
+  onView,
+  onUpgrade,
+  t,
+  isDeleting = false,
+  isDisabled = false
+}) => {
   const brandColor = card.themeConfig?.brandColor || '#10b981';
   
   // Subscription Logic
@@ -231,46 +251,76 @@ const CardItem: React.FC<CardItemProps> = ({ card, onEdit, onDelete, onView, onU
 
          {/* Footer Actions - Elevated Z-Index and Solid Background to ensure clickable */}
          <div className="mt-auto grid grid-cols-3 gap-2 border-t border-slate-800 pt-4 relative z-50 bg-slate-900">
-            <button 
+            <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onView();
+                if (!isDisabled) {
+                  onView();
+                }
               }}
-              className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors py-2 rounded-lg hover:bg-slate-800 cursor-pointer"
+              disabled={isDisabled}
+              className={`flex flex-col items-center gap-1 transition-colors py-2 rounded-lg cursor-pointer ${
+                isDisabled
+                  ? 'text-slate-600 opacity-50 cursor-not-allowed'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
               title={t.actions.preview}
             >
-               <Eye size={18} />
-               <span className="text-[10px] font-medium uppercase">{t.actions.preview}</span>
+              <Eye size={18} />
+              <span className="text-[10px] font-medium uppercase">{t.actions.preview}</span>
             </button>
-            <button 
+            <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onEdit();
+                if (!isDisabled) {
+                  onEdit();
+                }
               }}
-              className="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors py-2 rounded-lg hover:bg-slate-800 cursor-pointer"
+              disabled={isDisabled}
+              className={`flex flex-col items-center gap-1 transition-colors py-2 rounded-lg cursor-pointer ${
+                isDisabled
+                  ? 'text-slate-600 opacity-50 cursor-not-allowed'
+                  : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+              }`}
               title={t.actions.edit}
             >
-               <Edit3 size={18} />
-               <span className="text-[10px] font-medium uppercase">{t.actions.edit}</span>
+              <Edit3 size={18} />
+              <span className="text-[10px] font-medium uppercase">{t.actions.edit}</span>
             </button>
-            <button 
+            <button
               type="button"
               onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if(window.confirm(t.actions.deleteConfirm)) {
-                   await onDelete();
+                if (!isDisabled && !isDeleting && window.confirm(t.actions.deleteConfirm)) {
+                  await onDelete();
                 }
               }}
-              className="flex flex-col items-center gap-1 text-slate-400 hover:text-red-400 transition-colors py-2 rounded-lg hover:bg-slate-800 cursor-pointer"
-              title={t.actions.delete}
+              disabled={isDisabled || isDeleting}
+              className={`flex flex-col items-center gap-1 transition-colors py-2 rounded-lg cursor-pointer ${
+                isDeleting
+                  ? 'text-red-500 bg-red-900/20'
+                  : isDisabled
+                  ? 'text-slate-600 opacity-50 cursor-not-allowed'
+                  : 'text-slate-400 hover:text-red-400 hover:bg-slate-800'
+              }`}
+              title={isDeleting ? 'Eliminando...' : t.actions.delete}
             >
-               <Trash2 size={18} />
-               <span className="text-[10px] font-medium uppercase">{t.actions.delete}</span>
+              {isDeleting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-medium uppercase">Eliminando</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 size={18} />
+                  <span className="text-[10px] font-medium uppercase">{t.actions.delete}</span>
+                </>
+              )}
             </button>
          </div>
       </div>
