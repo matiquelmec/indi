@@ -13,6 +13,41 @@ const generateUUID = (): string => {
 // Changed key to force load of new default psychologist data
 const STORAGE_KEY = 'indi_cards_v2_psy';
 
+/**
+ * Cleans up corrupted data and fixes common issues
+ * - Replaces via.placeholder.com images with reliable alternatives
+ * - Ensures all required fields are present
+ * - Fixes malformed social links
+ */
+const cleanupCorruptedDataInternal = (cards: DigitalCard[]): DigitalCard[] => {
+  const reliableAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=150&h=150&q=80';
+
+  return cards.map(card => {
+    const cleanedCard = { ...card };
+
+    // Fix problematic avatar URLs
+    if (!cleanedCard.avatarUrl ||
+        cleanedCard.avatarUrl.includes('via.placeholder.com') ||
+        cleanedCard.avatarUrl.includes('placeholder')) {
+      cleanedCard.avatarUrl = reliableAvatar;
+      console.log(`🧹 Fixed corrupted avatar for card: ${card.firstName} ${card.lastName}`);
+    }
+
+    // Ensure required fields exist
+    if (!cleanedCard.firstName) cleanedCard.firstName = 'Usuario';
+    if (!cleanedCard.lastName) cleanedCard.lastName = 'Anónimo';
+    if (!cleanedCard.title) cleanedCard.title = '';
+    if (!cleanedCard.company) cleanedCard.company = '';
+    if (!cleanedCard.bio) cleanedCard.bio = '';
+    if (!cleanedCard.email) cleanedCard.email = '';
+    if (!cleanedCard.phone) cleanedCard.phone = '';
+    if (!cleanedCard.socialLinks) cleanedCard.socialLinks = [];
+    if (!cleanedCard.themeConfig) cleanedCard.themeConfig = { layout: 'centered', atmosphere: 'clean', brandColor: '#1e40af' };
+
+    return cleanedCard;
+  });
+};
+
 export const getStoredCards = (): DigitalCard[] => {
   if (typeof window === 'undefined') return [INITIAL_CARD];
   
@@ -30,7 +65,18 @@ export const getStoredCards = (): DigitalCard[] => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
       return initialData;
     }
-    return JSON.parse(stored);
+    const rawCards = JSON.parse(stored);
+
+    // Automatically clean up corrupted data
+    const cleanedCards = cleanupCorruptedDataInternal(rawCards);
+
+    // If cleanup changed anything, save the cleaned version
+    if (JSON.stringify(rawCards) !== JSON.stringify(cleanedCards)) {
+      console.log('🧹 Cleaned up corrupted card data');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedCards));
+    }
+
+    return cleanedCards;
   } catch (e) {
     console.error("Failed to parse cards from storage", e);
     return [INITIAL_CARD];
@@ -63,6 +109,30 @@ export const deleteCardFromStorage = (cardId: string): DigitalCard[] => {
   console.log('Cards remaining after delete:', newCards.length);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newCards));
   return newCards;
+};
+
+
+/**
+ * Force cleanup of all stored data - removes all corrupted entries
+ * Use this if you need to completely reset user data
+ */
+export const forceCleanupStorage = (): void => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    // Clear the current storage
+    localStorage.removeItem(STORAGE_KEY);
+
+    // Also clear any old storage keys that might have corrupted data
+    const oldKeys = ['indi-cards', 'indi_cards_v1', 'indi_cards_v2_psy_old'];
+    oldKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+
+    console.log('🧹 Force cleaned all storage - fresh start');
+  } catch (error) {
+    console.error('Error during force cleanup:', error);
+  }
 };
 
 export const createNewCardTemplate = (): DigitalCard => {
