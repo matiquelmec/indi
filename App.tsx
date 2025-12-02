@@ -16,6 +16,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 // New routing system (overlay mode)
 import { useAuthRouter } from './hooks/useRouter';
 import { getUserSlug } from './lib/userUtils';
+// Meta tags for modern social sharing
+import { generateCardMetaTags, updateMetaTags } from './utils/metaTags';
 
 function AppContent() {
   // --- AUTH STATE ---
@@ -130,6 +132,12 @@ function AppContent() {
         setSelectedCardId(card.id); // Use the actual card ID, not the slug
         setCurrentView('live');
         setIsExternalCard(true); // Mark as external card
+
+        // 🏷️ Update meta tags for modern social sharing
+        const baseUrl = window.location.origin;
+        const metaTags = generateCardMetaTags(card, baseUrl);
+        updateMetaTags(metaTags);
+        console.log('🏷️ Meta tags updated for card sharing:', card.firstName, card.lastName);
       } else {
         console.error('Card not found:', cardIdOrSlug);
         // Redirect to 404 or landing page
@@ -146,11 +154,42 @@ function AppContent() {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/by-slug/${slug}`);
       if (response.ok) {
-        const card = await response.json();
+        const dbCard = await response.json();
+
+        // Transform backend data to frontend format
+        const card: DigitalCard = {
+          id: dbCard.id,
+          userId: dbCard.userId,
+          firstName: dbCard.firstName,
+          lastName: dbCard.lastName,
+          title: dbCard.title,
+          company: dbCard.company || '',
+          bio: dbCard.bio || '',
+          email: dbCard.email || '',
+          phone: dbCard.phone || '',
+          location: dbCard.location || '',
+          avatarUrl: dbCard.avatarUrl || '',
+          themeId: dbCard.themeId,
+          themeConfig: dbCard.themeConfig || {},
+          socialLinks: dbCard.socialLinks || [],
+          isPublished: dbCard.isPublished,
+          publishedUrl: dbCard.publishedUrl || undefined,
+          customSlug: dbCard.customSlug || undefined,
+          viewsCount: dbCard.viewsCount || 0,
+          subscriptionStatus: 'free',
+          planType: 'free'
+        };
+
         setCards(prev => [...(prev || []).filter(c => c.id !== card.id), card]);
         setSelectedCardId(card.id);
         setCurrentView('live');
         setIsExternalCard(true); // Mark as external card
+
+        // 🏷️ Update meta tags for modern social sharing
+        const baseUrl = window.location.origin;
+        const metaTags = generateCardMetaTags(card, baseUrl);
+        updateMetaTags(metaTags);
+        console.log('🏷️ Meta tags updated for card sharing (by slug):', card.firstName, card.lastName);
       } else {
         console.error('Card not found by slug:', slug);
         // Redirect to 404 or landing page
@@ -1043,7 +1082,7 @@ function AppContent() {
         } else if (publishedCard?.id) {
           window.open(`/card/${publishedCard.id}`, '_blank');
         }
-      }} language={language} />}
+      }} language={language} card={publishedCard} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
 
       {/* Error Notification */}

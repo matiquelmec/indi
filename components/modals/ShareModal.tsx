@@ -18,8 +18,9 @@ import {
   Linkedin,
   Send
 } from 'lucide-react';
-import { Language } from '../../types';
+import { Language, DigitalCard } from '../../types';
 import { translations } from '../../lib/i18n';
+import { generateSocialShareUrls } from '../../utils/metaTags';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -27,9 +28,10 @@ interface ShareModalProps {
   url: string;
   onOpenLive: () => void;
   language: Language;
+  card?: DigitalCard; // Add card data for personalized sharing
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, onOpenLive, language }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, onOpenLive, language, card }) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'link' | 'qr' | 'social'>('link');
   const [isAnimating, setIsAnimating] = useState(false);
@@ -64,14 +66,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, onOpenLiv
   // Generate QR Code URL with custom styling
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&color=10b981&bgcolor=020617`;
 
-  // Social share URLs
-  const shareUrls = {
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out my digital card: ${url}`)}`,
-    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my digital card`)}&url=${encodeURIComponent(url)}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-    telegram: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('Check out my digital card')}`,
-    email: `mailto:?subject=${encodeURIComponent('My Digital Card')}&body=${encodeURIComponent(`Check out my digital card: ${url}`)}`
-  };
+  // 🎯 Enhanced Social share URLs with personalized messages
+  const shareUrls = card
+    ? generateSocialShareUrls(card, url)
+    : {
+        // Fallback URLs if no card data available
+        whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out my digital card: ${url}`)}`,
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my digital card`)}&url=${encodeURIComponent(url)}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+        telegram: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('Check out my digital card')}`,
+        email: `mailto:?subject=${encodeURIComponent('My Digital Card')}&body=${encodeURIComponent(`Check out my digital card: ${url}`)}`
+      };
 
   const handleSocialShare = (platform: keyof typeof shareUrls) => {
     window.open(shareUrls[platform], '_blank', 'width=600,height=400');
@@ -113,7 +118,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, onOpenLiv
           <div className="relative p-8 pb-4 overflow-hidden">
             {/* Animated background pattern */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/20 via-teal-600/20 to-blue-600/20">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239CA3AF" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+              <div className="absolute inset-0 opacity-30" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239CA3AF' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`}}></div>
             </div>
 
             {/* Close Button */}
