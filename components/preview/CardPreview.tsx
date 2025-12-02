@@ -1,10 +1,11 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { DigitalCard, Language } from '../../types';
 import { generatePalette } from '../../lib/colorUtils';
 import { downloadVCard } from '../../lib/vcardUtils';
 import { translations } from '../../lib/i18n';
 import { formatFullName } from '../../lib/nameUtils';
 import { useAutoTracking } from '../../services/analyticsService';
+import CardSkeleton from './CardSkeleton';
 import { 
   Linkedin, 
   MessageCircle, 
@@ -29,33 +30,33 @@ interface CardPreviewProps {
 }
 
 const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'preview', language = 'es' }) => {
-  // Early return if card is null or undefined
-  if (!card) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="relative">
-          {/* Modern loading animation */}
-          <div className="w-20 h-20 relative">
-            {/* Outer rotating ring */}
-            <div className="absolute inset-0 border-4 border-slate-700/30 rounded-full"></div>
-            {/* Inner glowing ring */}
-            <div className="absolute inset-0 border-4 border-transparent border-t-emerald-400 border-r-emerald-400/50 rounded-full animate-spin"></div>
-            {/* Center dot */}
-            <div className="absolute inset-4 bg-emerald-400/20 rounded-full animate-pulse"></div>
-          </div>
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-          {/* Loading text */}
-          <div className="mt-6 text-center">
-            <div className="text-emerald-400 font-semibold tracking-wide animate-pulse">
-              Cargando tarjeta...
-            </div>
-            <div className="text-slate-400 text-sm mt-2 opacity-60">
-              Preparando tu experiencia
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  // Preload avatar image
+  useEffect(() => {
+    if (card?.avatarUrl) {
+      const img = new Image();
+      img.src = card.avatarUrl;
+      img.onload = () => {
+        setImageLoaded(true);
+        // Small delay to ensure smooth transition
+        setTimeout(() => setIsLoading(false), 300);
+      };
+      img.onerror = () => {
+        // Even on error, show the card with fallback
+        setImageLoaded(true);
+        setIsLoading(false);
+      };
+    } else {
+      // No avatar, show card immediately
+      setTimeout(() => setIsLoading(false), 100);
+    }
+  }, [card?.avatarUrl]);
+
+  // Early return with elegant skeleton loader
+  if (!card || isLoading) {
+    return <CardSkeleton mode={mode} />;
   }
 
   // Analytics tracking
@@ -186,11 +187,15 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
                     className={`absolute -inset-0.5 rounded-full blur opacity-75 animate-pulse`} 
                     style={{ backgroundColor: palette.colors.secondary }}
                   ></div>
-                  <img 
-                    src={card.avatarUrl} 
-                    alt="Profile" 
-                    className="relative w-28 h-28 rounded-full object-cover border-4 shadow-xl"
-                    style={{ borderColor: palette.colors.background }}
+                  <img
+                    src={card.avatarUrl}
+                    alt="Profile"
+                    className="relative w-28 h-28 rounded-full object-cover border-4 shadow-xl transition-opacity duration-300"
+                    style={{
+                      borderColor: palette.colors.background,
+                      opacity: imageLoaded ? 1 : 0
+                    }}
+                    onLoad={() => setImageLoaded(true)}
                   />
                </div>
             </div>
