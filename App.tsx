@@ -38,7 +38,18 @@ function AppContent() {
   };
 
   // --- VIEW STATE ---
-  const [currentView, setCurrentView] = useState<ViewState>('landing');
+  // Smart initial view: detect external cards to avoid dashboard flash
+  const getInitialView = (): ViewState => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/card/') || path.startsWith('/u/')) {
+        return 'live'; // Start directly in live view for external cards
+      }
+    }
+    return 'landing';
+  };
+
+  const [currentView, setCurrentView] = useState<ViewState>(getInitialView());
   
   // Data State
   const [cards, setCards] = useState<DigitalCard[]>([]);
@@ -199,6 +210,12 @@ function AppContent() {
 
       console.log('🔍 Checking route:', path, 'segments:', pathSegments);
 
+      // Early detection of external cards to prevent dashboard flash
+      if (path.startsWith('/card/') || path.startsWith('/u/')) {
+        setIsExternalCard(true);
+        setCurrentView('live'); // Ensure we're in live view immediately
+      }
+
       // NEW: Handle user-scoped administrative routes
       if (pathSegments.length >= 2) {
         const [userSlug, action, resourceId] = pathSegments;
@@ -297,6 +314,11 @@ function AppContent() {
   // Auto-redirect based on auth state
   useEffect(() => {
     if (!authLoading) {
+      // Don't redirect if already viewing an external card
+      if (currentView === 'live' && isExternalCard) {
+        return; // Keep viewing external card
+      }
+
       if (isAuthenticated && (currentView === 'landing' || currentView === 'auth')) {
         console.log('🔄 User authenticated, redirecting to dashboard');
         // Always go to dashboard, don't create cards automatically
@@ -305,9 +327,8 @@ function AppContent() {
         console.log('🔄 User not authenticated, redirecting to landing');
         setCurrentView('landing');
       }
-      // Don't redirect if viewing a public card (currentView === 'live' && isExternalCard)
     }
-  }, [isAuthenticated, authLoading, currentView]);
+  }, [isAuthenticated, authLoading, currentView, isExternalCard]);
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
