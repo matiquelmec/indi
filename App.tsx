@@ -182,8 +182,14 @@ function AppContent() {
 
   // --- EFFECTS ---
   useEffect(() => {
-    // Load cards from backend on initial mount
-    refetchCardsFromBackend();
+    // Optimized loading: Only fetch all cards if NOT viewing external card
+    const path = window.location.pathname;
+    const isExternalCardView = path.startsWith('/card/') || path.startsWith('/u/');
+
+    if (!isExternalCardView || isAuthenticated) {
+      // Load cards from backend on initial mount (skip for external card views)
+      refetchCardsFromBackend();
+    }
 
     // Enhanced URL Routing System
     const checkRouting = () => {
