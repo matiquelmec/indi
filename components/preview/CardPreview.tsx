@@ -5,6 +5,7 @@ import { downloadVCard } from '../../lib/vcardUtils';
 import { translations } from '../../lib/i18n';
 import { formatFullName } from '../../lib/nameUtils';
 import { useAutoTracking } from '../../services/analyticsService';
+import { generateSocialShareUrls, generateWhatsAppMessage } from '../../utils/metaTags';
 import CardSkeleton from './CardSkeleton';
 import { 
   Linkedin, 
@@ -105,19 +106,44 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    const currentUrl = window.location.href;
+
+    // 🎯 Check if we're on mobile and can detect WhatsApp
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isWhatsAppAvailable = isMobile;
+
+    if (isWhatsAppAvailable) {
+      // Use our enhanced WhatsApp sharing with personalized message
+      const whatsappMessage = generateWhatsAppMessage(card, currentUrl);
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+
+      // Open WhatsApp directly
+      window.open(whatsappUrl, '_blank');
+      tracking.trackShare('whatsapp-enhanced');
+      console.log('🎯 Enhanced WhatsApp sharing:', whatsappMessage);
+    } else if (navigator.share) {
+      // Fallback to native share API with enhanced message
       try {
+        const enhancedMessage = generateWhatsAppMessage(card, currentUrl);
         await navigator.share({
-          title: formatFullName(card.firstName, card.lastName),
-          text: card.bio,
-          url: window.location.href,
+          title: `${formatFullName(card.firstName, card.lastName)} | INDI Digital Card`,
+          text: enhancedMessage,
+          url: currentUrl,
         });
-        tracking.trackShare('native-share');
+        tracking.trackShare('native-share-enhanced');
       } catch (err) {
         console.log('Error sharing:', err);
       }
     } else {
-      alert('Sharing is not supported on this device/browser.');
+      // Last fallback: copy enhanced message to clipboard
+      const enhancedMessage = generateWhatsAppMessage(card, currentUrl);
+      try {
+        await navigator.clipboard.writeText(enhancedMessage);
+        alert('✨ Mensaje personalizado copiado al portapapeles!');
+        tracking.trackShare('clipboard-enhanced');
+      } catch (err) {
+        alert('Sharing is not supported on this device/browser.');
+      }
     }
   };
 
