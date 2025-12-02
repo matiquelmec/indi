@@ -67,7 +67,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
     if (mode === 'live' && card.id) {
       tracking.trackView();
     }
-  }, [card.id, mode, tracking]);
+  }, [card.id, mode]); // tracking methods are stable, no need as dependency
 
   // Determine configuration (fallback to defaults if partial)
   const config = card.themeConfig || {
