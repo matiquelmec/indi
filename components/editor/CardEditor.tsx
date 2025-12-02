@@ -176,12 +176,12 @@ const CardEditor: React.FC<CardEditorProps> = ({ card, setCard, onPublish, isPub
          </div>
       </div>
 
-      {/* Mobile: Floating Publish Button - Shown only when editing */}
+      {/* Mobile: Floating Publish Button - Repositioned to avoid content overlap */}
       <div className="sm:hidden">
         <button
           onClick={onPublish}
           disabled={isPublishing}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-full shadow-2xl shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-full shadow-2xl shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
            {isPublishing ? (
              <>
@@ -198,7 +198,7 @@ const CardEditor: React.FC<CardEditorProps> = ({ card, setCard, onPublish, isPub
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-700">
+      <div className="flex-1 overflow-y-auto p-6 pb-24 sm:pb-6 scrollbar-thin scrollbar-thumb-slate-700">
         
         {activeTab === 'details' && (
           <div className="space-y-6 max-w-lg mx-auto animate-fade-in">
