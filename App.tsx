@@ -860,25 +860,80 @@ function AppContent() {
 
         {/* Mobile Toggle */}
         <div className="flex items-center gap-4 md:hidden">
-          <button className="p-2 text-slate-300" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button
+            className="p-3 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all min-h-[48px] min-w-[48px] touch-manipulation active:scale-95"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+          >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - FIXED VERSION */}
       {isMobileMenuOpen && (
-        <div className="fixed top-24 left-0 w-full bg-slate-900/95 backdrop-blur-xl border-b border-slate-800 z-40 p-6 md:hidden animate-fade-in flex flex-col gap-4 shadow-2xl">
-           {!isAuthenticated ? (
-              <button onClick={() => setCurrentView('auth')} className="w-full py-4 rounded-xl bg-emerald-500 text-slate-900 font-bold">{t.login}</button>
-           ) : (
-              <>
-                <button onClick={handleGoToDashboard} className="flex items-center gap-3 px-4 py-4 rounded-xl bg-slate-800 text-white font-bold"><LayoutDashboard size={24} /> {t.dashboard}</button>
-                <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-4 rounded-xl text-red-400 font-bold"><LogOut size={24} /> {t.logout}</button>
-              </>
-           )}
-           <button onClick={toggleLanguage} className="w-full py-3 border border-slate-700 rounded-xl text-slate-300 font-bold uppercase">{language}</button>
-        </div>
+        <>
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Menu Content */}
+          <div className="fixed top-24 left-0 right-0 bg-slate-900/98 backdrop-blur-xl border-b border-slate-800 z-50 p-6 md:hidden animate-fade-in shadow-2xl">
+            <div className="flex flex-col gap-4 max-w-sm mx-auto">
+              {!isAuthenticated ? (
+                <button
+                  onClick={() => {setCurrentView('auth'); setIsMobileMenuOpen(false);}}
+                  className="w-full py-4 rounded-xl bg-emerald-500 text-slate-900 font-bold text-lg min-h-[56px] touch-manipulation active:scale-95 transition-transform"
+                >
+                  {t.login}
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {handleGoToDashboard(); setIsMobileMenuOpen(false);}}
+                    className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-slate-800 text-white font-bold text-lg min-h-[56px] touch-manipulation active:scale-95 transition-transform hover:bg-slate-700"
+                  >
+                    <LayoutDashboard size={24} /> {t.dashboard}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        console.log('🔄 Mobile logout attempt...');
+                        setIsMobileMenuOpen(false);
+                        const result = await signOut();
+                        if (result.success) {
+                          console.log('✅ Mobile logout successful');
+                          setCurrentView('landing');
+                        } else {
+                          console.error('❌ Mobile logout failed, forcing logout:', result.error);
+                          // Force logout on failure
+                          setCurrentView('landing');
+                          window.location.reload();
+                        }
+                      } catch (error) {
+                        console.error('❌ Mobile logout error, forcing logout:', error);
+                        // Force logout on any error
+                        setCurrentView('landing');
+                        window.location.reload();
+                      }
+                    }}
+                    className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-red-900/20 border-2 border-red-800/50 text-red-400 font-bold text-lg min-h-[56px] touch-manipulation active:scale-95 transition-all hover:bg-red-900/40 hover:border-red-700"
+                  >
+                    <LogOut size={24} /> {t.logout}
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => {toggleLanguage(); setIsMobileMenuOpen(false);}}
+                className="w-full py-3 border border-slate-700 rounded-xl text-slate-300 font-bold uppercase text-lg min-h-[52px] touch-manipulation active:scale-95 transition-transform hover:border-slate-600"
+              >
+                {language}
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* CONTENT AREA */}
