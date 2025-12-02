@@ -64,9 +64,9 @@ const Dashboard: React.FC<DashboardProps> = ({
             {t.subtitle}
           </p>
         </div>
-        <button 
+        <button
           onClick={onCreateNew}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 group"
+          className="flex items-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 group min-h-[48px] touch-manipulation"
         >
           <div className="bg-white/20 p-1 rounded-md group-hover:bg-white/30 transition-colors">
              <Plus size={18} />
@@ -89,7 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({
              </div>
              <h3 className="text-xl font-semibold text-white mb-2">{t.noCards}</h3>
              <p className="text-slate-400 mb-6">{t.startBuilding}</p>
-             <button onClick={onCreateNew} className="text-emerald-400 hover:text-emerald-300 font-medium">{t.createFirst} &rarr;</button>
+             <button onClick={onCreateNew} className="text-emerald-400 hover:text-emerald-300 font-medium py-3 px-4 rounded-lg min-h-[48px] touch-manipulation">{t.createFirst} &rarr;</button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -108,9 +108,9 @@ const Dashboard: React.FC<DashboardProps> = ({
             ))}
             
             {/* Quick Create Card Button in Grid */}
-            <button 
+            <button
               onClick={onCreateNew}
-              className="group flex flex-col items-center justify-center gap-4 bg-slate-900/30 border border-dashed border-slate-700 hover:border-emerald-500/50 hover:bg-slate-900/60 rounded-3xl min-h-[280px] transition-all"
+              className="group flex flex-col items-center justify-center gap-4 bg-slate-900/30 border border-dashed border-slate-700 hover:border-emerald-500/50 hover:bg-slate-900/60 rounded-3xl min-h-[280px] transition-all touch-manipulation"
             >
               <div className="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-emerald-500/20 group-hover:text-emerald-400 text-slate-500 flex items-center justify-center transition-all shadow-xl">
                 <Plus size={32} />
@@ -238,9 +238,9 @@ const CardItem: React.FC<CardItemProps> = ({
          {/* Trial / Upgrade Banner (If not Active) */}
          {status !== 'active' && (
              <div className="mb-4">
-                <button 
+                <button
                   onClick={onUpgrade}
-                  className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-400 group-hover:text-emerald-300"
+                  className="w-full py-3 md:py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/50 transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-400 group-hover:text-emerald-300 min-h-[48px] touch-manipulation"
                 >
                    <Crown size={14} /> {t.actions.upgrade}
                 </button>
@@ -248,7 +248,7 @@ const CardItem: React.FC<CardItemProps> = ({
          )}
 
          {/* Footer Actions - Elevated Z-Index and Solid Background to ensure clickable */}
-         <div className="mt-auto grid grid-cols-3 gap-2 border-t border-slate-800 pt-4 relative z-50 bg-slate-900">
+         <div className="mt-auto grid grid-cols-3 gap-3 md:gap-2 border-t border-slate-800 pt-4 relative z-50 bg-slate-900">
             <button
               type="button"
               onClick={(e) => {
@@ -259,7 +259,7 @@ const CardItem: React.FC<CardItemProps> = ({
                 }
               }}
               disabled={isDisabled}
-              className={`flex flex-col items-center gap-1 transition-colors py-2 rounded-lg cursor-pointer ${
+              className={`flex flex-col items-center gap-1 transition-colors py-3 md:py-2 rounded-lg cursor-pointer min-h-[48px] touch-manipulation ${
                 isDisabled
                   ? 'text-slate-600 opacity-50 cursor-not-allowed'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -279,7 +279,7 @@ const CardItem: React.FC<CardItemProps> = ({
                 }
               }}
               disabled={isDisabled}
-              className={`flex flex-col items-center gap-1 transition-colors py-2 rounded-lg cursor-pointer ${
+              className={`flex flex-col items-center gap-1 transition-colors py-3 md:py-2 rounded-lg cursor-pointer min-h-[48px] touch-manipulation ${
                 isDisabled
                   ? 'text-slate-600 opacity-50 cursor-not-allowed'
                   : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
@@ -299,7 +299,7 @@ const CardItem: React.FC<CardItemProps> = ({
                 }
               }}
               disabled={isDisabled || isDeleting}
-              className={`flex flex-col items-center gap-1 transition-colors py-2 rounded-lg cursor-pointer ${
+              className={`flex flex-col items-center gap-1 transition-colors py-3 md:py-2 rounded-lg cursor-pointer min-h-[48px] touch-manipulation ${
                 isDeleting
                   ? 'text-red-500 bg-red-900/20'
                   : isDisabled

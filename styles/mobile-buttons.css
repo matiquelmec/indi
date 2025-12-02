@@ -1,0 +1,175 @@
+/*
+ * MOBILE BUTTON OPTIMIZATION SYSTEM
+ * Ensures all buttons meet accessibility and touch requirements
+ */
+
+/* Global button optimizations for mobile */
+@media (max-width: 768px) {
+  /* Base button styling for mobile - ensure minimum touch targets */
+  button,
+  [role="button"],
+  .btn {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    padding: 12px 16px !important;
+    touch-action: manipulation; /* Prevents double-tap zoom */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+  }
+
+  /* Text-only buttons (like links) need more padding */
+  button:not([class*="w-"]):not([class*="h-"]) {
+    padding: 16px 20px !important;
+  }
+
+  /* Ensure proper spacing between buttons in groups */
+  .grid button + button,
+  .flex button + button,
+  .space-x-2 > button,
+  .space-x-3 > button,
+  .space-x-4 > button {
+    margin-left: 8px !important;
+  }
+
+  /* Footer action buttons in cards */
+  .grid.grid-cols-3 button {
+    min-height: 52px !important;
+    padding: 12px 8px !important;
+  }
+
+  /* Form buttons (login, submit, etc.) */
+  form button[type="submit"] {
+    min-height: 56px !important;
+    padding: 16px 24px !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  /* Social links and interactive elements */
+  a[target="_blank"],
+  .social-link {
+    min-height: 56px !important;
+    padding: 16px !important;
+  }
+
+  /* Ensure icon buttons maintain square aspect ratio */
+  button[class*="w-14"],
+  button[class*="h-14"] {
+    min-width: 56px !important;
+    min-height: 56px !important;
+  }
+
+  /* Analytics and dashboard buttons */
+  .analytics-controls button {
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+  }
+
+  /* Toggle buttons and mode selectors */
+  .toggle-group button,
+  .mode-selector button {
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+  }
+
+  /* Prevent text selection on buttons */
+  button,
+  [role="button"] {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Improve button focus for accessibility */
+  button:focus,
+  [role="button"]:focus {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+  }
+
+  /* Ensure ripple effect doesn't interfere with touch */
+  button:active,
+  [role="button"]:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* High-density displays (iPhone Pro, etc.) */
+@media (max-width: 428px) {
+  /* Slightly larger touch targets for small screens */
+  button,
+  [role="button"] {
+    min-height: 52px !important;
+    padding: 14px 18px !important;
+  }
+
+  /* Card action buttons get more space */
+  .grid.grid-cols-3 button {
+    min-height: 56px !important;
+    padding: 14px 10px !important;
+  }
+}
+
+/* Landscape mobile orientation */
+@media (max-width: 896px) and (orientation: landscape) {
+  /* Compact buttons for landscape mode */
+  button,
+  [role="button"] {
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+  }
+}
+
+/* Performance optimizations */
+button,
+[role="button"] {
+  /* Hardware acceleration for smooth animations */
+  will-change: transform;
+  transform: translateZ(0);
+
+  /* Improve scroll performance */
+  contain: layout style paint;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  button,
+  [role="button"] {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  button,
+  [role="button"] {
+    border: 2px solid currentColor !important;
+  }
+}
+
+/* Dark mode specific optimizations */
+@media (prefers-color-scheme: dark) {
+  button:focus,
+  [role="button"]:focus {
+    outline-color: #34d399;
+  }
+}
+
+/* Utility classes for consistent button behavior */
+.touch-optimized {
+  min-height: 48px !important;
+  min-width: 48px !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-large {
+  min-height: 56px !important;
+  min-width: 56px !important;
+}
+
+.touch-small {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}

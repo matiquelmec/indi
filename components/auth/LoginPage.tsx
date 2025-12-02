@@ -93,7 +93,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onLoginSuccess }) => {
              <button
                onClick={handleGoogleLogin}
                disabled={loading}
-               className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 transition-colors disabled:opacity-70"
+               className="w-full flex items-center justify-center gap-3 py-4 md:py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 transition-colors disabled:opacity-70 min-h-[48px] touch-manipulation"
              >
                 <div className="w-5 h-5 rounded-full border-2 border-slate-900/30 flex items-center justify-center text-[10px] font-bold">G</div>
                 {loading && !error ? 'Connecting...' : t.googleBtn}
@@ -117,7 +117,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onLoginSuccess }) => {
                  }
                }}
                disabled={loading}
-               className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-500 transition-colors disabled:opacity-70"
+               className="w-full flex items-center justify-center gap-3 py-4 md:py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-500 transition-colors disabled:opacity-70 min-h-[48px] touch-manipulation"
              >
                 <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">🎭</div>
                 {loading && !error ? 'Conectando...' : 'Ingreso Demo'}
@@ -197,7 +197,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onLoginSuccess }) => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-4 md:py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] touch-manipulation"
                 >
                   {loading ? (
                     <>
@@ -215,9 +215,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onLoginSuccess }) => {
 
           <p className="text-center text-slate-500 text-sm">
              {isRegistering ? (
-               <>Already have an account? <button onClick={() => setIsRegistering(false)} className="text-emerald-400 hover:underline font-medium">Sign In</button></>
+               <>Already have an account? <button onClick={() => setIsRegistering(false)} className="text-emerald-400 hover:underline font-medium py-2 px-1 min-h-[48px] touch-manipulation">Sign In</button></>
              ) : (
-               <>{t.noAccount} <button onClick={() => setIsRegistering(true)} className="text-emerald-400 hover:underline font-medium">{t.signUp}</button></>
+               <>{t.noAccount} <button onClick={() => setIsRegistering(true)} className="text-emerald-400 hover:underline font-medium py-2 px-1 min-h-[48px] touch-manipulation">{t.signUp}</button></>
              )}
           </p>
 

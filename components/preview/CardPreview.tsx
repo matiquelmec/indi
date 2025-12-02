@@ -188,22 +188,22 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
 
             {/* Quick Actions */}
             <div className={`flex gap-4 w-full ${isCentered ? 'justify-center' : 'justify-start'}`}>
-              <button 
+              <button
                 onClick={handleShare}
-                className="flex items-center justify-center w-14 h-14 rounded-full border transition-all hover:scale-105 active:scale-95"
-                style={{ 
-                  backgroundColor: palette.colors.surface, 
+                className="flex items-center justify-center w-14 h-14 md:w-14 md:h-14 min-w-[48px] min-h-[48px] rounded-full border transition-all hover:scale-105 active:scale-95 touch-manipulation"
+                style={{
+                  backgroundColor: palette.colors.surface,
                   borderColor: palette.colors.surfaceBorder,
                   color: palette.colors.text
                 }}
               >
                 <Share2 size={22} />
               </button>
-              <button 
+              <button
                 onClick={handleSaveContact}
-                className="flex items-center justify-center flex-1 max-w-[220px] h-14 rounded-full font-bold shadow-lg transition-transform active:scale-95 text-lg"
-                style={{ 
-                  backgroundColor: palette.colors.primary, 
+                className="flex items-center justify-center flex-1 max-w-[220px] h-14 md:h-14 min-h-[48px] rounded-full font-bold shadow-lg transition-transform active:scale-95 text-lg touch-manipulation"
+                style={{
+                  backgroundColor: palette.colors.primary,
                   color: palette.colors.onPrimary
                 }}
               >
@@ -248,7 +248,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => tracking.trackSocial(link.platform, link.url)}
-                    className="flex items-center justify-between p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                    className="flex items-center justify-between p-4 md:p-4 min-h-[56px] rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] group touch-manipulation"
                     style={{
                       backgroundColor: palette.colors.surface,
                       borderColor: palette.colors.surfaceBorder

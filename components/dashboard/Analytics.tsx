@@ -142,7 +142,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
             <button
               onClick={refreshAnalytics}
               disabled={isRefreshing}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-2 px-4 py-3 md:px-3 md:py-2 rounded-lg text-sm transition-colors min-h-[48px] touch-manipulation ${
                 isRefreshing
                   ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
                   : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
@@ -161,7 +161,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
                 setIsRefreshing(false);
               }}
               disabled={isRefreshing}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors border ${
+              className={`flex items-center gap-2 px-4 py-3 md:px-3 md:py-2 rounded-lg text-sm transition-colors border min-h-[48px] touch-manipulation ${
                 isRefreshing
                   ? 'bg-red-900/20 border-red-800 text-red-400 cursor-not-allowed'
                   : 'bg-red-900/20 border-red-800 hover:bg-red-900/40 text-red-400 hover:text-red-300'
@@ -175,7 +175,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
           <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
             <button
               onClick={() => onAnalyticsModeChange?.('global')}
-              className={`px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
+              className={`px-4 py-3 md:px-3 md:py-2 text-sm rounded-md transition-colors flex items-center gap-2 min-h-[48px] touch-manipulation ${
                 analyticsMode === 'global'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -186,7 +186,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
             </button>
             <button
               onClick={() => onAnalyticsModeChange?.('individual')}
-              className={`px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
+              className={`px-4 py-3 md:px-3 md:py-2 text-sm rounded-md transition-colors flex items-center gap-2 min-h-[48px] touch-manipulation ${
                 analyticsMode === 'individual'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -201,7 +201,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
             <>
               <button
                 onClick={() => onAnalyticsModeChange?.('global')}
-                className="flex items-center text-slate-400 hover:text-white text-sm"
+                className="flex items-center text-slate-400 hover:text-white text-sm py-2 px-3 rounded-lg min-h-[48px] touch-manipulation"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Volver
@@ -209,7 +209,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
               <select
                 value={selectedAnalyticsCardId || ''}
                 onChange={(e) => onAnalyticsCardSelect?.(e.target.value || null)}
-                className="bg-slate-700 border-slate-600 text-white rounded-md text-sm"
+                className="bg-slate-700 border-slate-600 text-white rounded-md text-sm py-2 px-3 min-h-[48px] touch-manipulation"
               >
                 <option value="">Seleccionar tarjeta...</option>
                 {cards.filter(card => !card.isTemporary).map(card => (
