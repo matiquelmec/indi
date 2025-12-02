@@ -3,7 +3,6 @@
  * Handles all analytics tracking and data fetching
  */
 
-import { useMemo } from 'react';
 import { AnalyticsData } from '../types';
 import { analyticsCache } from './cacheManager';
 
@@ -397,10 +396,10 @@ export const analyticsService = new AnalyticsService();
 
 // Auto-tracking utilities
 export const useAutoTracking = (cardId: string) => {
-  return useMemo(() => ({
+  return {
     trackView: () => analyticsService.trackView(cardId),
     trackContact: (platform?: string) => analyticsService.trackContactSave(cardId, platform),
     trackSocial: (platform: string, url: string) => analyticsService.trackSocialClick(cardId, platform, url),
     trackShare: (method: string) => analyticsService.trackShare(cardId, method)
-  }), [cardId]);
+  };
 };

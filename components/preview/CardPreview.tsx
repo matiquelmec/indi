@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { DigitalCard, Language } from '../../types';
 import { generatePalette } from '../../lib/colorUtils';
 import { downloadVCard } from '../../lib/vcardUtils';
@@ -30,32 +30,8 @@ interface CardPreviewProps {
 }
 
 const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'preview', language = 'es' }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Preload avatar image
-  useEffect(() => {
-    if (card?.avatarUrl) {
-      const img = new Image();
-      img.src = card.avatarUrl;
-      img.onload = () => {
-        setImageLoaded(true);
-        // Small delay to ensure smooth transition
-        setTimeout(() => setIsLoading(false), 300);
-      };
-      img.onerror = () => {
-        // Even on error, show the card with fallback
-        setImageLoaded(true);
-        setIsLoading(false);
-      };
-    } else {
-      // No avatar, show card immediately
-      setTimeout(() => setIsLoading(false), 100);
-    }
-  }, [card?.avatarUrl]);
-
-  // Early return with elegant skeleton loader
-  if (!card || isLoading) {
+  // Early return if card is null or undefined - Use elegant skeleton
+  if (!card) {
     return <CardSkeleton mode={mode} />;
   }
 
@@ -67,7 +43,7 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
     if (mode === 'live' && card.id) {
       tracking.trackView();
     }
-  }, [card.id, mode]); // tracking methods are stable, no need as dependency
+  }, [card.id, mode]); // Remove tracking from deps as it's recreated each render
 
   // Determine configuration (fallback to defaults if partial)
   const config = card.themeConfig || {
@@ -187,15 +163,11 @@ const CardPreview: React.FC<CardPreviewProps> = ({ card, scale = 1, mode = 'prev
                     className={`absolute -inset-0.5 rounded-full blur opacity-75 animate-pulse`} 
                     style={{ backgroundColor: palette.colors.secondary }}
                   ></div>
-                  <img
-                    src={card.avatarUrl}
-                    alt="Profile"
-                    className="relative w-28 h-28 rounded-full object-cover border-4 shadow-xl transition-opacity duration-300"
-                    style={{
-                      borderColor: palette.colors.background,
-                      opacity: imageLoaded ? 1 : 0
-                    }}
-                    onLoad={() => setImageLoaded(true)}
+                  <img 
+                    src={card.avatarUrl} 
+                    alt="Profile" 
+                    className="relative w-28 h-28 rounded-full object-cover border-4 shadow-xl"
+                    style={{ borderColor: palette.colors.background }}
                   />
                </div>
             </div>
