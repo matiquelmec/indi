@@ -135,8 +135,8 @@ const CardEditor: React.FC<CardEditorProps> = ({ card, setCard, onPublish, isPub
   return (
     <div className="h-full flex flex-col">
       {/* Header with Navigation & Publish */}
-      <div className="relative flex justify-center items-center p-4 px-6 bg-slate-900/40 border-b border-slate-800 min-h-[72px]">
-         
+      <div className="relative flex justify-center items-center p-4 px-6 bg-slate-900/40 border-b border-slate-800 min-h-[72px] md:min-h-[80px]">
+
          {/* Left: Clean now (Navigation is in Main Header) */}
          <div className="absolute left-6 flex items-center">
             {/* Back button removed to avoid redundancy with top Navbar */}
@@ -149,17 +149,17 @@ const CardEditor: React.FC<CardEditorProps> = ({ card, setCard, onPublish, isPub
             <TabButton active={activeTab === 'social'} onClick={() => setActiveTab('social')} label={t.tabs.links} />
          </div>
 
-         {/* Right: Actions */}
-         <div className="absolute right-6 flex items-center gap-3">
+         {/* Right: Actions - Mobile Optimized */}
+         <div className="absolute right-3 sm:right-6 flex items-center gap-2">
            <div className="text-xs font-medium text-slate-500 hidden xl:flex items-center gap-1.5 px-3">
              {saveStatus === 'saved' && <><Check size={12} className="text-emerald-500"/> {t.saved}</>}
              {saveStatus === 'idle' && ''}
            </div>
-           
-           <button 
+
+           <button
              onClick={onPublish}
              disabled={isPublishing}
-             className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-sm font-semibold rounded-lg shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+             className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] justify-center"
            >
               {isPublishing ? (
                 <>
@@ -168,12 +168,33 @@ const CardEditor: React.FC<CardEditorProps> = ({ card, setCard, onPublish, isPub
                 </>
               ) : (
                 <>
-                  <Upload size={16} />
+                  <Upload size={16} className="flex-shrink-0" />
                   <span className="hidden sm:inline">{t.publish}</span>
                 </>
               )}
            </button>
          </div>
+      </div>
+
+      {/* Mobile: Floating Publish Button - Shown only when editing */}
+      <div className="sm:hidden">
+        <button
+          onClick={onPublish}
+          disabled={isPublishing}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-full shadow-2xl shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+           {isPublishing ? (
+             <>
+               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+               <span>{t.publishing}</span>
+             </>
+           ) : (
+             <>
+               <Upload size={20} />
+               <span>{t.publish}</span>
+             </>
+           )}
+        </button>
       </div>
 
       {/* Content Area */}
