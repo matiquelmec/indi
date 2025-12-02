@@ -134,11 +134,65 @@ const Analytics: React.FC<AnalyticsProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Analytics Mode Toggle */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/30 border border-slate-700 rounded-xl p-4">
-        <div className="flex items-center gap-4">
-          {/* Refresh Button */}
-          <div className="flex items-center gap-2">
+      {/* Analytics Mode Toggle - Mobile Optimized */}
+      <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-4">
+        {/* Main Controls Row */}
+        <div className="flex flex-col gap-3">
+          {/* Mode Toggle - Full width on mobile */}
+          <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
+            <button
+              onClick={() => onAnalyticsModeChange?.('global')}
+              className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors flex items-center justify-center gap-2 ${
+                analyticsMode === 'global'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Globales</span>
+              <span className="sm:hidden">Global</span>
+            </button>
+            <button
+              onClick={() => onAnalyticsModeChange?.('individual')}
+              className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors flex items-center justify-center gap-2 ${
+                analyticsMode === 'individual'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              <span className="hidden sm:inline">Individual</span>
+              <span className="sm:hidden">Individual</span>
+            </button>
+          </div>
+
+          {/* Individual Mode Controls */}
+          {analyticsMode === 'individual' && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <button
+                onClick={() => onAnalyticsModeChange?.('global')}
+                className="flex items-center text-slate-400 hover:text-white text-sm py-2 px-3 rounded-lg"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Volver
+              </button>
+              <select
+                value={selectedAnalyticsCardId || ''}
+                onChange={(e) => onAnalyticsCardSelect?.(e.target.value || null)}
+                className="bg-slate-700 border-slate-600 text-white rounded-md text-sm py-2 px-3 w-full sm:w-auto flex-1"
+              >
+                <option value="">Seleccionar tarjeta...</option>
+                {cards.filter(card => !card.isTemporary).map(card => (
+                  <option key={card.id} value={card.id}>
+                    {card.firstName} {card.lastName} - {card.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Action Buttons Row */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={refreshAnalytics}
               disabled={isRefreshing}
@@ -147,10 +201,10 @@ const Analytics: React.FC<AnalyticsProps> = ({
                   ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
                   : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'
               }`}
-              title="Actualizar datos (usa cache inteligente)"
+              title="Actualizar datos"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+              <span className="hidden sm:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
             </button>
 
             <button
@@ -161,74 +215,27 @@ const Analytics: React.FC<AnalyticsProps> = ({
                 setIsRefreshing(false);
               }}
               disabled={isRefreshing}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors border ${
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors border ${
                 isRefreshing
                   ? 'bg-red-900/20 border-red-800 text-red-400 cursor-not-allowed'
                   : 'bg-red-900/20 border-red-800 hover:bg-red-900/40 text-red-400 hover:text-red-300'
               }`}
-              title="Limpiar cache y obtener datos frescos"
+              title="Limpiar cache"
             >
-              💥 Cache Bust
+              <span className="hidden sm:inline">💥 Cache Bust</span>
+              <span className="sm:hidden">💥</span>
             </button>
-          </div>
 
-          <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
-            <button
-              onClick={() => onAnalyticsModeChange?.('global')}
-              className={`px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
-                analyticsMode === 'global'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Globales
-            </button>
-            <button
-              onClick={() => onAnalyticsModeChange?.('individual')}
-              className={`px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
-                analyticsMode === 'individual'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Eye className="w-4 h-4" />
-              Individual
-            </button>
+            {/* Last Update Info */}
+            {lastUpdate && (
+              <div className="text-xs text-slate-400 flex items-center gap-2 ml-auto">
+                <Activity className="w-3 h-3" />
+                <span className="hidden sm:inline">Última actualización: {lastUpdate.toLocaleTimeString('es-ES')}</span>
+                <span className="sm:hidden">{lastUpdate.toLocaleTimeString('es-ES', { timeStyle: 'short' })}</span>
+              </div>
+            )}
           </div>
-
-          {analyticsMode === 'individual' && (
-            <>
-              <button
-                onClick={() => onAnalyticsModeChange?.('global')}
-                className="flex items-center text-slate-400 hover:text-white text-sm py-1 px-2 rounded-lg"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Volver
-              </button>
-              <select
-                value={selectedAnalyticsCardId || ''}
-                onChange={(e) => onAnalyticsCardSelect?.(e.target.value || null)}
-                className="bg-slate-700 border-slate-600 text-white rounded-md text-sm py-2 px-3"
-              >
-                <option value="">Seleccionar tarjeta...</option>
-                {cards.filter(card => !card.isTemporary).map(card => (
-                  <option key={card.id} value={card.id}>
-                    {card.firstName} {card.lastName} - {card.title}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
         </div>
-
-        {/* Last Update Info */}
-        {lastUpdate && (
-          <div className="text-xs text-slate-400 flex items-center gap-2">
-            <Activity className="w-3 h-3" />
-            Última actualización: {lastUpdate.toLocaleTimeString('es-ES')}
-          </div>
-        )}
       </div>
 
       {/* Show analytics only if in global mode OR individual mode with selected card */}
