@@ -619,6 +619,65 @@ app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
   }
 });
 
+// Get chart data for dashboard - NEW ENDPOINT FOR PRODUCTION
+app.get('/api/analytics/dashboard/chart', async (req: Request, res: Response) => {
+  try {
+    // Get last 7 days of data
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const { data: events } = await supabase
+      .from('analytics_events')
+      .select('created_at, event_type')
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    // Process events into daily stats
+    const dailyStats: Record<string, any> = {};
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    // Initialize last 7 days with zero values
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayName = days[date.getDay()];
+      dailyStats[dayName] = { date: dayName, views: 0, clicks: 0, contacts: 0 };
+    }
+
+    // Process actual events
+    events?.forEach((event: any) => {
+      const eventDate = new Date(event.created_at);
+      const dayName = days[eventDate.getDay()];
+
+      if (dailyStats[dayName]) {
+        if (event.event_type === 'view') dailyStats[dayName].views++;
+        if (event.event_type === 'social_click') dailyStats[dayName].clicks++;
+        if (event.event_type === 'contact_save') dailyStats[dayName].contacts++;
+      }
+    });
+
+    // Set cache headers for chart data
+    const chartData = Object.values(dailyStats);
+    const now = new Date();
+    const dataHash = chartData.reduce((hash: number, day: any) => hash + day.views + day.clicks + day.contacts, 0);
+    const etag = `"chart-${dataHash}-${Math.floor(now.getTime() / 60000)}"`;
+
+    res.set({
+      'Cache-Control': 'public, max-age=90, stale-while-revalidate=180', // 90 sec cache, 3 min stale
+      'ETag': etag,
+      'Last-Modified': now.toUTCString(),
+      'Vary': 'Accept-Encoding'
+    });
+
+    return res.json({
+      chartData
+    });
+  } catch (error) {
+    console.error('Chart data error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Delete existing card
 app.delete('/api/cards/:id', async (req: Request, res: Response) => {
   try {
