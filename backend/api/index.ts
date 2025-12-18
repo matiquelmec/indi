@@ -783,6 +783,64 @@ app.delete('/api/cards/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Get public card by ID (Public View)
+app.get('/api/cards/:id/public', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Card ID is required' });
+    }
+
+    const { data: card, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', id)
+      .eq('is_published', true)
+      .single();
+
+    if (error || !card) {
+      console.error('Card not found or not published:', error);
+      return res.status(404).json({ error: 'Card not found or not published' });
+    }
+
+    // Convert snake_case to camelCase
+    const transformedCard = {
+      id: card.id,
+      userId: card.user_id,
+      firstName: card.first_name,
+      lastName: card.last_name,
+      title: card.title,
+      company: card.company,
+      bio: card.bio,
+      email: card.email,
+      phone: card.phone,
+      website: card.website,
+      location: card.location,
+      avatarUrl: card.avatar_url,
+      coverUrl: card.cover_url,
+      socialLinks: card.social_links || [],
+      contactFields: card.contact_fields || [],
+      themeConfig: card.theme_config || {},
+      isPublished: card.is_published,
+      viewsCount: card.views_count || 0,
+      createdAt: card.created_at,
+      publishedUrl: card.published_url,
+      customSlug: card.custom_slug
+    };
+
+    // Increment view count asynchronously
+    supabase.rpc('increment_card_views', { card_id: id }).then(({ error }: { error: any }) => {
+      if (error) console.error('Error incrementing views:', error);
+    });
+
+    return res.json(transformedCard);
+  } catch (error) {
+    console.error('Error fetching public card:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get public card by slug/username (for /u/username URLs)
 app.get('/api/cards/by-slug/:slug', async (req: Request, res: Response) => {
   try {
