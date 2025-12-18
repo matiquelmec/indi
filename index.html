@@ -1,183 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="INDI - Plataforma de Identidad Digital. Crea tarjetas de presentación digitales profesionales con IA y analíticas." />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://indi.digital/" />
-    <meta property="og:title" content="INDI | Tu Identidad Digital Profesional" />
-    <meta property="og:description" content="Crea y comparte tu tarjeta de presentación digital profesional. Diseño elegante, analíticas en tiempo real." />
-    <meta property="og:image" content="https://indi.digital/og-image.jpg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="INDI - Plataforma de Identidad Digital. Crea tarjetas de presentación digitales profesionales con IA y analíticas." />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://indi.digital/" />
-    <meta property="twitter:title" content="INDI | Tu Identidad Digital Profesional" />
-    <meta property="twitter:description" content="Crea y comparte tu tarjeta de presentación digital profesional" />
-    <meta property="twitter:image" content="https://indi.digital/og-image.jpg" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://indi.digital/" />
+  <meta property="og:title" content="INDI | Tu Identidad Digital Profesional" />
+  <meta property="og:description"
+    content="Crea y comparte tu tarjeta de presentación digital profesional. Diseño elegante, analíticas en tiempo real." />
+  <meta property="og:image" content="https://indi.digital/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
-    <!-- WhatsApp specific -->
-    <meta property="og:site_name" content="INDI Digital" />
-    <meta property="og:locale" content="es_ES" />
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://indi.digital/" />
+  <meta property="twitter:title" content="INDI | Tu Identidad Digital Profesional" />
+  <meta property="twitter:description" content="Crea y comparte tu tarjeta de presentación digital profesional" />
+  <meta property="twitter:image" content="https://indi.digital/og-image.jpg" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <!-- WhatsApp specific -->
+  <meta property="og:site_name" content="INDI Digital" />
+  <meta property="og:locale" content="es_ES" />
 
-    <title>INDI | Tu Identidad Digital Profesional</title>
-    
-    <!-- Production Tailwind Script -->
-    <!-- Production Tailwind Script removed - using build process -->
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.5s ease-out forwards',
-              'slide-up': 'slideUp 0.6s ease-out forwards',
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              }
-            },
-            perspective: {
-              '1000': '1000px',
-            },
-            rotate: {
-              'y-12': '12deg',
-              'z-6': '6deg',
-            }
-          }
-        }
-      }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <style>
-      /* Preload critical styles */
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <title>INDI | Tu Identidad Digital Profesional</title>
+
+  <!-- Production Tailwind Script -->
+  <!-- Production Tailwind Script removed - using build process -->
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+    rel="stylesheet">
+  <style>
+    /* Preload critical styles */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
       }
 
-      @keyframes spin {
-        to { transform: translate(-50%, -50%) rotate(360deg); }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    /* New animations for modern share modal */
+    @keyframes scale-in {
+      from {
+        transform: scale(0);
       }
 
-      /* New animations for modern share modal */
-      @keyframes scale-in {
-        from { transform: scale(0); }
-        to { transform: scale(1); }
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
       }
 
-      @keyframes slide-up {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
       }
 
-      @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+      to {
+        opacity: 1;
       }
+    }
 
-      .animate-scale-in {
-        animation: scale-in 0.3s ease-out;
-      }
+    .animate-scale-in {
+      animation: scale-in 0.3s ease-out;
+    }
 
-      .animate-slide-up {
-        animation: slide-up 0.4s ease-out;
-      }
+    .animate-slide-up {
+      animation: slide-up 0.4s ease-out;
+    }
 
-      .animate-fade-in {
-        animation: fade-in 0.3s ease-out;
-      }
+    .animate-fade-in {
+      animation: fade-in 0.3s ease-out;
+    }
 
-      .animation-delay-2000 {
-        animation-delay: 2s;
-      }
+    .animation-delay-2000 {
+      animation-delay: 2s;
+    }
 
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #020617; /* Slate 950 matching app theme */
-        color: #f8fafc;
-        margin: 0;
-        overflow-x: hidden;
-        animation: fadeIn 0.3s ease-out;
-      }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #020617;
+      /* Slate 950 matching app theme */
+      color: #f8fafc;
+      margin: 0;
+      overflow-x: hidden;
+      animation: fadeIn 0.3s ease-out;
+    }
 
-      /* Initial loading state */
-      #root:empty {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
-        position: relative;
-      }
+    /* Initial loading state */
+    #root:empty {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+      position: relative;
+    }
 
-      #root:empty::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
-        border: 3px solid rgba(16, 185, 129, 0.2);
-        border-top-color: #10b981;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #0f172a; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #334155; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
-      }
-      /* Utilities for 3D Landing Page Hero */
-      .perspective-1000 {
-        perspective: 1000px;
-      }
-      .rotate-y-12 {
-        transform: rotateY(12deg) rotateZ(6deg);
-      }
-      .rotate-y-12:hover {
-        transform: rotateY(0deg) rotateZ(0deg);
-      }
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
-    </style>
-<script type="importmap">
+    #root:empty::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border: 3px solid rgba(16, 185, 129, 0.2);
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Utilities for 3D Landing Page Hero */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    .rotate-y-12 {
+      transform: rotateY(12deg) rotateZ(6deg);
+    }
+
+    .rotate-y-12:hover {
+      transform: rotateY(0deg) rotateZ(0deg);
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+  <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
@@ -189,11 +189,13 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
-<link rel="stylesheet" href="/styles/mobile-buttons.css">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/styles/mobile-buttons.css">
 </head>
-  <body>
-    <div id="root"></div>
+
+<body>
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
