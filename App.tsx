@@ -424,6 +424,15 @@ function AppContent() {
   // --- NAVIGATION HANDLERS ---
   const handleCreateCard = () => {
     const newCard = createNewCardTemplate();
+
+    // Auto-fill user data if available
+    if (isAuthenticated && user) {
+      newCard.firstName = user.user_metadata?.first_name || user.firstName || '';
+      newCard.lastName = user.user_metadata?.last_name || user.lastName || '';
+      // If we have an email, we can use it (optional)
+      newCard.email = user.email || '';
+    }
+
     // NO guardar en storage todavía - solo crear plantilla temporal
     setCards(prev => [...prev, { ...newCard, isTemporary: true }]);
     setSelectedCardId(newCard.id);

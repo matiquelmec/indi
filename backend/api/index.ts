@@ -223,7 +223,7 @@ app.post('/api/cards', async (req: Request, res: Response) => {
       social_links: req.body.socialLinks,
       contact_fields: req.body.contactFields,
       theme_config: req.body.themeConfig,
-      is_published: req.body.isPublished || false,
+      is_published: req.body.isPublished !== undefined ? req.body.isPublished : true, // Default to true
       published_url: publishedUrl,
       custom_slug: customSlug,
       views_count: 0
@@ -348,7 +348,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
     let publishedUrl = req.body.publishedUrl;
 
     // If firstName or lastName are being changed and no custom slug is provided, regenerate URLs
-    if (req.body.firstName && req.body.lastName && !req.body.customSlug) {
+    if ((req.body.firstName !== undefined || req.body.lastName !== undefined) && !req.body.customSlug) {
       // Get existing card data first
       const { data: existingCard } = await supabase
         .from('cards')
@@ -356,29 +356,34 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
         .eq('id', id)
         .single();
 
-      // Check if names have actually changed
-      const namesChanged = existingCard && (
-        existingCard.first_name !== req.body.firstName ||
-        existingCard.last_name !== req.body.lastName
-      );
+      if (existingCard) {
+        const newFirstName = req.body.firstName !== undefined ? req.body.firstName : existingCard.first_name;
+        const newLastName = req.body.lastName !== undefined ? req.body.lastName : existingCard.last_name;
 
-      if (namesChanged) {
-        // Get existing slugs to ensure uniqueness (excluding current card)
-        const { data: existingCards, error: slugError } = await supabase
-          .from('cards')
-          .select('custom_slug')
-          .not('custom_slug', 'is', null)
-          .neq('id', id); // Exclude current card
+        // Check if names have actually changed
+        const namesChanged =
+          newFirstName !== existingCard.first_name ||
+          newLastName !== existingCard.last_name;
 
-        if (slugError) {
-          console.error('Error fetching existing slugs:', slugError);
-        } else {
-          const existingSlugs = existingCards?.map(card => card.custom_slug).filter(Boolean) || [];
-          customSlug = createUniqueSlug(req.body.firstName, req.body.lastName, existingSlugs);
+        if (namesChanged) {
+          // Get existing slugs to ensure uniqueness (excluding current card)
+          const { data: existingCards, error: slugError } = await supabase
+            .from('cards')
+            .select('custom_slug')
+            .not('custom_slug', 'is', null)
+            .neq('id', id); // Exclude current card
 
-          if (customSlug) {
-            publishedUrl = `https://frontindi.vercel.app/card/${customSlug}`;
-            console.log(`🔄 Regenerated unique slug due to name change: ${customSlug} -> ${publishedUrl}`);
+          if (slugError) {
+            console.error('Error fetching existing slugs:', slugError);
+          } else {
+            const existingSlugs = existingCards?.map(card => card.custom_slug).filter(Boolean) || [];
+            // Use the new merged names for slug generation
+            customSlug = createUniqueSlug(newFirstName, newLastName, existingSlugs);
+
+            if (customSlug) {
+              publishedUrl = `https://frontindi.vercel.app/card/${customSlug}`;
+              console.log(`🔄 Regenerated unique slug due to name change: ${customSlug} -> ${publishedUrl}`);
+            }
           }
         }
       }

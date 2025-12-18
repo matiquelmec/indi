@@ -3,7 +3,7 @@ import { INITIAL_CARD } from '../constants';
 
 // Generate a proper UUID v4
 const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0;
     const v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -27,8 +27,8 @@ const cleanupCorruptedDataInternal = (cards: DigitalCard[]): DigitalCard[] => {
 
     // Fix problematic avatar URLs
     if (!cleanedCard.avatarUrl ||
-        cleanedCard.avatarUrl.includes('via.placeholder.com') ||
-        cleanedCard.avatarUrl.includes('placeholder')) {
+      cleanedCard.avatarUrl.includes('via.placeholder.com') ||
+      cleanedCard.avatarUrl.includes('placeholder')) {
       cleanedCard.avatarUrl = reliableAvatar;
       console.log(`🧹 Fixed corrupted avatar for card: ${card.firstName} ${card.lastName}`);
     }
@@ -50,16 +50,16 @@ const cleanupCorruptedDataInternal = (cards: DigitalCard[]): DigitalCard[] => {
 
 export const getStoredCards = (): DigitalCard[] => {
   if (typeof window === 'undefined') return [INITIAL_CARD];
-  
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) {
       // Initialize with demo card if empty
       // Ensure the initial card has subscription logic if needed, though for the demo constant it might be cleaner to add it dynamically
       const initialWithSub: DigitalCard = {
-         ...INITIAL_CARD,
-         subscriptionStatus: 'trialing',
-         trialEndsAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days from now
+        ...INITIAL_CARD,
+        subscriptionStatus: 'trialing',
+        trialEndsAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days from now
       };
       const initialData = [initialWithSub];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
@@ -86,7 +86,7 @@ export const getStoredCards = (): DigitalCard[] => {
 export const saveCardToStorage = (card: DigitalCard): DigitalCard[] => {
   const cards = getStoredCards();
   const index = cards.findIndex(c => String(c.id) === String(card.id));
-  
+
   let newCards;
   if (index >= 0) {
     // Update existing
@@ -96,7 +96,7 @@ export const saveCardToStorage = (card: DigitalCard): DigitalCard[] => {
     // Add new
     newCards = [card, ...cards];
   }
-  
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newCards));
   return newCards;
 };
@@ -143,7 +143,7 @@ export const createNewCardTemplate = (): DigitalCard => {
   return {
     ...INITIAL_CARD,
     id: uuid,
-    isPublished: false,
+    isPublished: true,
     publishedUrl: undefined,
     // Business Logic: New cards start with a 7-day trial
     subscriptionStatus: 'trialing',
