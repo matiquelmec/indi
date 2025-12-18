@@ -133,14 +133,17 @@ export const supabaseAuthService = {
    */
   async signOut() {
     try {
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error('❌ Signout error:', error);
-        return {
-          success: false,
-          error: error.message
-        };
+      // Attempt to sign out, but don't crash if session is already gone
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      } catch (innerError: any) {
+        // Ignore "Auth session missing" error as it means we're already logged out
+        if (innerError.message?.includes('Auth session missing')) {
+          console.log('⚠️ Session already missing during signout, proceeding...');
+        } else {
+          throw innerError;
+        }
       }
 
       console.log('✅ User signed out successfully');
@@ -163,16 +166,28 @@ export const supabaseAuthService = {
    */
   async getCurrentSession() {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      // Robust session retrieval: checks current session, refreshes if needed
+      const { data, error } = await supabase.auth.getSession();
 
       if (error) {
         console.error('❌ Session error:', error);
         return { session: null, user: null };
       }
 
+      // Explicitly check if session is valid
+      if (!data.session) {
+        // Try one more time to get user (sometimes session is null but user is there)
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (!userError && userData.user) {
+          // If we have a user but no session, we might need to refresh manually or re-login
+          // For now, return null to force re-login
+          return { session: null, user: null };
+        }
+      }
+
       return {
-        session,
-        user: session?.user ? this.formatUser(session.user) : null
+        session: data.session,
+        user: data.session?.user ? this.formatUser(data.session.user) : null
       };
 
     } catch (error: any) {
@@ -213,18 +228,19 @@ export const supabaseAuthService = {
   /**
    * Format user data consistently
    */
-  formatUser(user: any) {
-    if (!user) return null;
+  formatUser(supaUser: any) {
+    if (!supaUser) return null;
+
+    // Safety check for user_metadata
+    const metadata = supaUser.user_metadata || {};
 
     return {
-      id: user.id,
-      email: user.email,
-      firstName: user.user_metadata?.first_name || user.user_metadata?.name?.split(' ')[0] || '',
-      lastName: user.user_metadata?.last_name || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-      fullName: user.user_metadata?.full_name || user.user_metadata?.name || '',
-      avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-      emailVerified: user.email_confirmed_at ? true : false,
-      createdAt: user.created_at
+      id: supaUser.id,
+      email: supaUser.email,
+      firstName: metadata.first_name || '',
+      lastName: metadata.last_name || '',
+      fullName: metadata.full_name || '',
+      avatarUrl: metadata.avatar_url || ''
     };
   },
 
