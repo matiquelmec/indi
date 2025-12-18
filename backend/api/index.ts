@@ -62,6 +62,18 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+// Helper to get authenticated user
+const getAuthenticatedUser = async (req: Request) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) return null;
+  return user;
+};
+
 // Mock auth endpoints
 app.post('/api/auth/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -108,8 +120,12 @@ app.post('/api/auth/register', (req: Request, res: Response) => {
 // Real cards endpoint
 app.get('/api/cards', async (req: Request, res: Response) => {
   try {
-    // Get current user from auth (simplified for demo)
-    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+    // Get authenticated user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
 
     const { data: cards, error } = await supabase
       .from('cards')
@@ -122,7 +138,7 @@ app.get('/api/cards', async (req: Request, res: Response) => {
     }
 
     // Map database snake_case to frontend camelCase
-    const mappedCards = (cards || []).map(card => ({
+    const mappedCards = (cards || []).map((card: any) => ({
       id: card.id,
       userId: card.user_id,
       firstName: card.first_name,
@@ -160,7 +176,12 @@ app.get('/api/cards', async (req: Request, res: Response) => {
 // Create new card
 app.post('/api/cards', async (req: Request, res: Response) => {
   try {
-    // Creating new card
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
 
     // Generate unique slug for URL if names are provided
     let customSlug = req.body.customSlug;
@@ -188,7 +209,7 @@ app.post('/api/cards', async (req: Request, res: Response) => {
 
     // Map frontend camelCase to database snake_case
     const cardData = {
-      user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
+      user_id: userId,
       first_name: req.body.firstName,
       last_name: req.body.lastName,
       title: req.body.title,
@@ -315,7 +336,12 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Updating existing card
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
 
     // Check if names are being changed to regenerate URLs if needed
     let customSlug = req.body.customSlug;
@@ -360,7 +386,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
 
     // Map frontend camelCase to database snake_case
     const cardData = {
-      user_id: req.body.userId || '23f71da9-1bac-4811-9456-50d5b7742567',
+      user_id: userId,
       first_name: req.body.firstName,
       last_name: req.body.lastName,
       title: req.body.title,
@@ -384,6 +410,7 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
       .from('cards')
       .update(cardData)
       .eq('id', id)
+      .eq('user_id', userId) // Ensure user owns the card
       .select()
       .single();
 
@@ -433,8 +460,12 @@ app.put('/api/cards/:id', async (req: Request, res: Response) => {
 // Real Analytics from Supabase - Global Overview
 app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response) => {
   try {
-    // Get current user from auth (simplified for demo)
-    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
 
     // Get user's cards
     const { data: cards, error: cardsError } = await supabase
@@ -524,7 +555,13 @@ app.get('/api/analytics/dashboard/overview', async (req: Request, res: Response)
 app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
   try {
     const { cardId } = req.params;
-    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
 
     if (!cardId) {
       return res.status(400).json({ error: 'Card ID is required' });
@@ -622,6 +659,25 @@ app.get('/api/analytics/card/:cardId', async (req: Request, res: Response) => {
 // Get chart data for dashboard - NEW ENDPOINT FOR PRODUCTION
 app.get('/api/analytics/dashboard/chart', async (req: Request, res: Response) => {
   try {
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
+
+    // Get user's cards first to secure the data
+    const { data: cards, error: cardsError } = await supabase
+      .from('cards')
+      .select('id')
+      .eq('user_id', userId);
+
+    const cardIds = cards?.map((c: any) => c.id) || [];
+
+    if (cardIds.length === 0) {
+      return res.json({ chartData: [] });
+    }
+
     // Get last 7 days of data
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -629,6 +685,7 @@ app.get('/api/analytics/dashboard/chart', async (req: Request, res: Response) =>
     const { data: events } = await supabase
       .from('analytics_events')
       .select('created_at, event_type')
+      .in('card_id', cardIds) // Only fetch events for user's cards
       .gte('created_at', sevenDaysAgo.toISOString())
       .order('created_at', { ascending: true });
 
@@ -682,7 +739,13 @@ app.get('/api/analytics/dashboard/chart', async (req: Request, res: Response) =>
 app.delete('/api/cards/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '23f71da9-1bac-4811-9456-50d5b7742567'; // Demo user ID
+
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = user.id;
 
     if (!id) {
       return res.status(400).json({ error: 'Card ID is required' });
@@ -740,19 +803,23 @@ app.get('/api/cards/by-slug/:slug', async (req: Request, res: Response) => {
     let matchingCard = cardBySlug;
 
     // If no card found by custom_slug, try by ID (for backward compatibility)
+    let cardById = null;
+    let idCheckError = null;
+
     if (!matchingCard) {
-      const { data: cardById, error: idError } = await supabase
+      const { data: foundById, error: idError } = await supabase
         .from('cards')
         .select('*')
         .eq('id', slug)
         .eq('is_published', true)
         .single();
 
-      matchingCard = cardById;
+      matchingCard = foundById;
+      idCheckError = idError;
     }
 
-    if (slugError && idError) {
-      console.error('Error fetching card by slug:', slugError, idError);
+    if (!matchingCard && (slugError || idCheckError)) {
+      console.error('Error fetching card by slug:', slugError, idCheckError);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
