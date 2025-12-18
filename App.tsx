@@ -12,6 +12,7 @@ import { DigitalCard, Language, ViewState } from './types';
 import { getStoredCards, saveCardToStorage, deleteCardFromStorage, createNewCardTemplate } from './services/storageService';
 import { translations } from './lib/i18n';
 import { generateUserSlug } from './lib/urlUtils';
+import { authService } from './services/unifiedAuth'; // Added import
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 // New routing system (overlay mode)
 import { useAuthRouter } from './hooks/useRouter';
@@ -52,7 +53,7 @@ function AppContent() {
   };
 
   const [currentView, setCurrentView] = useState<ViewState>(getInitialView());
-  
+
   // Data State
   const [cards, setCards] = useState<DigitalCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -205,15 +206,27 @@ function AppContent() {
   const refetchCardsFromBackend = async () => {
     setIsRefreshing(true);
     try {
+      // AUTH-SECURE FETCH
+      const { session } = await authService.getCurrentSession();
+      const token = session?.access_token || session?.token;
+
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       console.log('🔄 Refetching cards from backend...');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
+        headers
+      });
+
       if (response.ok) {
         const backendCards = await response.json();
         setCards(backendCards);
         console.log('✅ Cards refreshed:', backendCards.length, 'cards loaded');
         return backendCards;
       } else {
-        console.error('Failed to refetch cards from backend');
+        console.error('Failed to refetch cards from backend:', response.status);
         // Fallback to localStorage only if backend fails
         const storedCards = getStoredCards();
         setCards(storedCards);
@@ -551,11 +564,11 @@ function AppContent() {
 
   const handleGoToEditor = () => {
     if (!selectedCardId && cards.length > 0) {
-        setSelectedCardId(cards[0].id);
+      setSelectedCardId(cards[0].id);
     } else if (cards.length === 0) {
-        // No cards available, show message or stay in dashboard
-        console.log('No cards available to edit. User must create one first.');
-        return;
+      // No cards available, show message or stay in dashboard
+      console.log('No cards available to edit. User must create one first.');
+      return;
     }
     setCurrentView('editor');
     setIsMobileMenuOpen(false);
@@ -602,7 +615,7 @@ function AppContent() {
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({...cardToSave, isNew: false})
+              body: JSON.stringify({ ...cardToSave, isNew: false })
             });
 
             if (postResponse.ok) {
@@ -618,7 +631,7 @@ function AppContent() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({...cardToSave, isNew: false})
+            body: JSON.stringify({ ...cardToSave, isNew: false })
           });
 
           if (response.ok) {
@@ -793,11 +806,11 @@ function AppContent() {
         {isCardOwner(activeCard) && (
           <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
             <button onClick={() => setCurrentView('editor')} className="flex items-center gap-2 px-5 py-3 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-full shadow-2xl text-white font-medium hover:bg-slate-800 transition-all">
-               <Edit3 size={18} />
-               <span>{language === 'es' ? 'Editar Tarjeta' : 'Edit Card'}</span>
+              <Edit3 size={18} />
+              <span>{language === 'es' ? 'Editar Tarjeta' : 'Edit Card'}</span>
             </button>
             <button onClick={handleGoToDashboard} className="flex items-center justify-center w-12 h-12 bg-black/50 backdrop-blur-md border border-slate-700 rounded-full shadow-2xl text-white hover:bg-slate-900 transition-all">
-               <LayoutDashboard size={18} />
+              <LayoutDashboard size={18} />
             </button>
           </div>
         )}
@@ -841,26 +854,26 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans flex flex-col">
-      
+
       <SmartParticles color={themeColor} intensity="subtle" />
 
       {/* NAVBAR */}
       <nav className={`fixed top-0 w-full h-24 z-50 flex items-center justify-between px-6 lg:px-12 transition-all ${currentView === 'landing' ? 'bg-transparent' : 'bg-slate-950/80 backdrop-blur-md border-b border-slate-800'}`}>
-        
+
         {/* Logo */}
-        <div className="flex items-center cursor-pointer group" onClick={() => { if(isAuthenticated) handleGoToDashboard(); else setCurrentView('landing'); }}>
-           <span className="font-black text-5xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600 drop-shadow-lg hover:opacity-90 transition-opacity pb-1">
-              INDI
-            </span>
+        <div className="flex items-center cursor-pointer group" onClick={() => { if (isAuthenticated) handleGoToDashboard(); else setCurrentView('landing'); }}>
+          <span className="font-black text-5xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600 drop-shadow-lg hover:opacity-90 transition-opacity pb-1">
+            INDI
+          </span>
         </div>
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-6">
-          
+
           {/* App Links (Only if logged in) */}
           {showAppNav && (
             <>
-              <button 
+              <button
                 onClick={handleGoToDashboard}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-full transition-all text-sm font-bold tracking-wide border ${currentView === 'dashboard' ? 'bg-slate-800 text-emerald-400 border-slate-700' : 'text-slate-400 border-transparent hover:bg-slate-800/50'}`}
               >
@@ -872,9 +885,9 @@ function AppContent() {
 
           {/* Landing Links (If NOT logged in) */}
           {!isAuthenticated && currentView === 'landing' && (
-             <button onClick={() => setCurrentView('auth')} className="text-slate-300 hover:text-white font-medium text-sm transition-colors">
-                {t.login}
-             </button>
+            <button onClick={() => setCurrentView('auth')} className="text-slate-300 hover:text-white font-medium text-sm transition-colors">
+              {t.login}
+            </button>
           )}
 
           {/* Language Toggle */}
@@ -884,16 +897,16 @@ function AppContent() {
 
           {/* CTA / Profile */}
           {isAuthenticated ? (
-             <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 shadow-sm hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400 transition-all text-sm font-semibold text-slate-200">
-               <LogOut size={16} />
-               <span className="truncate max-w-[100px]">{t.logout}</span>
-             </button>
+            <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-800 shadow-sm hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400 transition-all text-sm font-semibold text-slate-200">
+              <LogOut size={16} />
+              <span className="truncate max-w-[100px]">{t.logout}</span>
+            </button>
           ) : (
-             currentView === 'landing' && (
-                <button onClick={() => setCurrentView('auth')} className="px-5 py-2.5 rounded-full bg-white text-slate-900 font-bold text-sm shadow-lg hover:bg-slate-100 transition-colors flex items-center gap-2">
-                   {t.getStarted} <ArrowRight size={16} />
-                </button>
-             )
+            currentView === 'landing' && (
+              <button onClick={() => setCurrentView('auth')} className="px-5 py-2.5 rounded-full bg-white text-slate-900 font-bold text-sm shadow-lg hover:bg-slate-100 transition-colors flex items-center gap-2">
+                {t.getStarted} <ArrowRight size={16} />
+              </button>
+            )
           )}
         </div>
 
@@ -923,7 +936,7 @@ function AppContent() {
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
               {!isAuthenticated ? (
                 <button
-                  onClick={() => {setCurrentView('auth'); setIsMobileMenuOpen(false);}}
+                  onClick={() => { setCurrentView('auth'); setIsMobileMenuOpen(false); }}
                   className="w-full py-4 rounded-xl bg-emerald-500 text-slate-900 font-bold text-lg min-h-[56px] touch-manipulation active:scale-95 transition-transform"
                 >
                   {t.login}
@@ -931,7 +944,7 @@ function AppContent() {
               ) : (
                 <>
                   <button
-                    onClick={() => {handleGoToDashboard(); setIsMobileMenuOpen(false);}}
+                    onClick={() => { handleGoToDashboard(); setIsMobileMenuOpen(false); }}
                     className="flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-slate-800 text-white font-bold text-lg min-h-[56px] touch-manipulation active:scale-95 transition-transform hover:bg-slate-700"
                   >
                     <LayoutDashboard size={24} /> {t.dashboard}
@@ -965,7 +978,7 @@ function AppContent() {
                 </>
               )}
               <button
-                onClick={() => {toggleLanguage(); setIsMobileMenuOpen(false);}}
+                onClick={() => { toggleLanguage(); setIsMobileMenuOpen(false); }}
                 className="w-full py-3 border border-slate-700 rounded-xl text-slate-300 font-bold uppercase text-lg min-h-[52px] touch-manipulation active:scale-95 transition-transform hover:border-slate-600"
               >
                 {language}
@@ -977,9 +990,9 @@ function AppContent() {
 
       {/* CONTENT AREA */}
       <main className={`flex-1 flex flex-col ${currentView === 'landing' ? 'pt-0' : 'pt-32 pb-12 px-6 h-screen'}`}>
-        
+
         {currentView === 'landing' && (
-           <LandingPage language={language} onStart={() => setCurrentView('auth')} onLogin={() => setCurrentView('auth')} />
+          <LandingPage language={language} onStart={() => setCurrentView('auth')} onLogin={() => setCurrentView('auth')} />
         )}
 
         {currentView === 'editor' && (
@@ -988,33 +1001,33 @@ function AppContent() {
               <div className="flex flex-col md:flex-row gap-8 h-full max-w-[1600px] mx-auto w-full animate-slide-up">
                 <div className="flex-1 min-w-0 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
                   <div className="p-4 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center md:hidden">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-sm font-semibold text-white">Editor</h2>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-sm font-semibold text-white">Editor</h2>
 
-                        {/* Auto-save Indicator */}
-                        {(isSaving || lastSaveTime) && (
-                          <div className="flex items-center gap-2 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                            {isSaving ? (
-                              <>
-                                <div className="relative w-3 h-3">
-                                  <div className="absolute inset-0 border border-blue-400/30 rounded-full"></div>
-                                  <div className="absolute inset-0 border border-transparent border-t-blue-400 rounded-full animate-spin"></div>
-                                </div>
-                                <span className="text-xs text-blue-400 font-medium">Guardando...</span>
-                              </>
-                            ) : (
-                              <>
-                                <div className="w-3 h-3 bg-emerald-400 rounded-full shadow-sm shadow-emerald-400/30"></div>
-                                <span className="text-xs text-emerald-400 font-medium">Guardado</span>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      {/* Auto-save Indicator */}
+                      {(isSaving || lastSaveTime) && (
+                        <div className="flex items-center gap-2 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                          {isSaving ? (
+                            <>
+                              <div className="relative w-3 h-3">
+                                <div className="absolute inset-0 border border-blue-400/30 rounded-full"></div>
+                                <div className="absolute inset-0 border border-transparent border-t-blue-400 rounded-full animate-spin"></div>
+                              </div>
+                              <span className="text-xs text-blue-400 font-medium">Guardando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-3 h-3 bg-emerald-400 rounded-full shadow-sm shadow-emerald-400/30"></div>
+                              <span className="text-xs text-emerald-400 font-medium">Guardado</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                      <button onClick={() => setShowMobilePreview(true)} className="flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded-full text-xs border border-emerald-600/30">
-                        <Eye size={12} /> Preview
-                      </button>
+                    <button onClick={() => setShowMobilePreview(true)} className="flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded-full text-xs border border-emerald-600/30">
+                      <Eye size={12} /> Preview
+                    </button>
                   </div>
                   <CardEditor
                     card={activeCard}
@@ -1046,24 +1059,24 @@ function AppContent() {
         )}
 
         {currentView === 'dashboard' && (
-           <div className="w-full h-full overflow-y-auto scrollbar-hide animate-fade-in">
-             <Dashboard
-               cards={(cards || []).filter(card => !card.isTemporary)}
-               onCreateNew={handleCreateCard}
-               onEdit={handleEditCard}
-               onDelete={handleDeleteCard}
-               onViewLive={handleViewLive}
-               onUpgrade={handleUpgradeClick}
-               language={language}
-               analyticsMode={analyticsMode}
-               onAnalyticsModeChange={setAnalyticsMode}
-               selectedAnalyticsCardId={selectedAnalyticsCardId}
-               onAnalyticsCardSelect={setSelectedAnalyticsCardId}
-               isDeleting={isDeleting}
-               deletingCardId={deletingCardId}
-               isRefreshing={isRefreshing}
-             />
-           </div>
+          <div className="w-full h-full overflow-y-auto scrollbar-hide animate-fade-in">
+            <Dashboard
+              cards={(cards || []).filter(card => !card.isTemporary)}
+              onCreateNew={handleCreateCard}
+              onEdit={handleEditCard}
+              onDelete={handleDeleteCard}
+              onViewLive={handleViewLive}
+              onUpgrade={handleUpgradeClick}
+              language={language}
+              analyticsMode={analyticsMode}
+              onAnalyticsModeChange={setAnalyticsMode}
+              selectedAnalyticsCardId={selectedAnalyticsCardId}
+              onAnalyticsCardSelect={setSelectedAnalyticsCardId}
+              isDeleting={isDeleting}
+              deletingCardId={deletingCardId}
+              isRefreshing={isRefreshing}
+            />
+          </div>
         )}
       </main>
 

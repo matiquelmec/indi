@@ -5,6 +5,7 @@
 
 import { AnalyticsData } from '../types';
 import { analyticsCache } from './cacheManager';
+import { authService } from './unifiedAuth';
 
 export interface AnalyticsOverview {
   totalCards: number;
@@ -114,11 +115,21 @@ class AnalyticsService {
         try {
           console.log('🔍 Fetching fresh dashboard overview analytics...');
 
+          // Get token for auth
+          const { session } = await authService.getCurrentSession();
+          const token = session?.access_token || session?.token;
+
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
           const response = await fetch(`${API_BASE}/analytics/dashboard/overview`, {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            }
+            headers
           });
 
           if (!response.ok) {
@@ -200,11 +211,21 @@ class AnalyticsService {
             // Get aggregated data for all cards
             console.log('🔍 Fetching fresh chart data...');
 
+            // Get token
+            const { session } = await authService.getCurrentSession();
+            const token = session?.access_token || session?.token;
+
+            const headers: Record<string, string> = {
+              'Content-Type': 'application/json',
+            };
+
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${API_BASE}/analytics/dashboard/chart`, {
               method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              }
+              headers
             });
 
             if (response.ok) {
