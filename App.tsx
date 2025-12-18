@@ -596,69 +596,75 @@ function AppContent() {
   // Immediate save to backend (no debounce) - for manual saves and publishing
   const saveCardToBackend = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
     // Saving card to backend
+    try {
+      // Determine if we should create (POST) or update (PUT)
+      // Logic Fix: Post if marked New, Temporary, or not found in our list
+      const existingCard = cards.find(c => c.id === cardToSave.id);
+      const isNewCard = cardToSave.isNew || cardToSave.isTemporary || !existingCard || (existingCard.isTemporary);
 
-    // Solo guardar en backend si NO es temporal
-    if (!cardToSave.isTemporary) {
-      try {
-        // Check if card exists (for updates vs creation)
-        const existingCard = cards.find(c => c.id === cardToSave.id);
+      if (!isNewCard) {
+        // Update existing card (PUT)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardToSave.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(cardToSave)
+        });
 
-        if (existingCard && !existingCard.isNew && !existingCard.isTemporary) {
-          // Update existing card (PUT)
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardToSave.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(cardToSave)
-          });
-
-          if (response.ok) {
-            const updatedCard = await response.json();
-            console.log('✅ BACKEND UPDATE SUCCESS:', updatedCard.id);
-            return updatedCard;
-          } else {
-            // If PUT fails, try POST (card might not exist in backend)
-            const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ ...cardToSave, isNew: false })
-            });
-
-            if (postResponse.ok) {
-              const savedCard = await postResponse.json();
-              console.log('✅ BACKEND CREATE SUCCESS:', savedCard.id);
-              return savedCard;
-            }
-          }
+        if (response.ok) {
+          const updatedCard = await response.json();
+          console.log('✅ BACKEND UPDATE SUCCESS:', updatedCard.id);
+          // Return card marked as persistent
+          return { ...updatedCard, isTemporary: false, isNew: false };
         } else {
-          // Create new card (POST)
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
+          // If PUT fails (e.g. 404), try POST to recover
+          console.warn('⚠️ Update failed, attempting creation...');
+          const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...cardToSave, isNew: false })
           });
 
-          if (response.ok) {
-            const savedCard = await response.json();
-            console.log('✅ BACKEND CREATE SUCCESS:', savedCard.id);
-            return savedCard;
+          if (postResponse.ok) {
+            const savedCard = await postResponse.json();
+            return { ...savedCard, isTemporary: false, isNew: false };
           }
         }
+      } else {
+        // Create new card (POST)
+        console.log('✨ CREATING new card via POST:', cardToSave.id);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...cardToSave, isNew: false })
+        });
 
-        saveCardToStorage(cardToSave); // Fallback
-      } catch (error) {
-        console.error('❌ BACKEND SAVE ERROR:', error);
-        saveCardToStorage(cardToSave); // Fallback
+        if (response.ok) {
+          const savedCard = await response.json();
+          console.log('✅ BACKEND CREATE SUCCESS:', savedCard.id);
+          // Return card marked as persistent
+          return { ...savedCard, isTemporary: false, isNew: false };
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Create failed:', response.status, errorText);
+        }
       }
-    }
 
-    return cardToSave;
+      // If backend save failed but didn't crash
+      saveCardToStorage(cardToSave);
+      return cardToSave;
+
+    } catch (error) {
+      console.error('❌ BACKEND SAVE ERROR:', error);
+      saveCardToStorage(cardToSave); // Fallback
+      return cardToSave;
+    }
   };
+
+
 
   // Debounced auto-save function
   const debouncedSave = useCallback(async (cardToSave: DigitalCard) => {
