@@ -17,12 +17,13 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 // New routing system (overlay mode)
 import { useAuthRouter } from './hooks/useRouter';
 import { getUserSlug } from './lib/userUtils';
+import { useCardManager } from './hooks/useCardManager'; // Added hook
 // Meta tags for modern social sharing
 import { generateCardMetaTags, updateMetaTags } from './utils/metaTags';
 
 function AppContent() {
   // --- AUTH STATE ---
-  const { user, isAuthenticated, signOut, loading: authLoading } = useAuth();
+  const { user, session, isAuthenticated, signOut, loading: authLoading } = useAuth();
 
   // New routing system (overlay mode - gradual migration)
   // const { navigate } = useAuthRouter(isAuthenticated, user); // DISABLED for now
@@ -54,8 +55,19 @@ function AppContent() {
 
   const [currentView, setCurrentView] = useState<ViewState>(getInitialView());
 
-  // Data State
-  const [cards, setCards] = useState<DigitalCard[]>([]);
+  // Data State - MIGRATED TO HOOK
+  const {
+    cards,
+    setCards,
+    isSaving,
+    lastSaveTime,
+    createCard,
+    saveCard,
+    deleteCard,
+    fetchCards,
+    fetchCardBySlugOrId
+  } = useCardManager();
+
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [cardToUpgrade, setCardToUpgrade] = useState<DigitalCard | null>(null);
   const [language, setLanguage] = useState<Language>('es');
@@ -68,11 +80,11 @@ function AppContent() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [publishedCard, setPublishedCard] = useState<DigitalCard | null>(null);
 
-  // Auto-save State & Refs
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingCardRef = useRef<DigitalCard | null>(null);
+  // Auto-save State (managed by hook now) & Refs
+  // const [isSaving, setIsSaving] = useState(false); 
+  // const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
+  // const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // const pendingCardRef = useRef<DigitalCard | null>(null);
 
   // 🚀 ROBUST STATE: Loading and error handling
   const [isDeleting, setIsDeleting] = useState(false);
@@ -93,114 +105,37 @@ function AppContent() {
 
   // Function to fetch card from backend if not found locally
   const fetchCardFromBackend = async (cardIdOrSlug: string) => {
-    try {
-      // Detect if it's a UUID (8-4-4-4-12 format) or a slug
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cardIdOrSlug);
-      const endpoint = isUUID
-        ? `${import.meta.env.VITE_API_URL}/cards/${cardIdOrSlug}/public`
-        : `${import.meta.env.VITE_API_URL}/cards/by-slug/${cardIdOrSlug}`;
-
-      console.log(`🔍 Fetching card: ${cardIdOrSlug}, isUUID: ${isUUID}, endpoint: ${endpoint}`);
-      const response = await fetch(endpoint);
-      if (response.ok) {
-        const dbCard = await response.json();
-
-        // Backend already returns camelCase, use directly
-        const card: DigitalCard = {
-          id: dbCard.id,
-          userId: dbCard.userId,
-          firstName: dbCard.firstName,
-          lastName: dbCard.lastName,
-          title: dbCard.title,
-          company: dbCard.company || '',
-          bio: dbCard.bio || '',
-          email: dbCard.email || '',
-          phone: dbCard.phone || '',
-          location: dbCard.location || '',
-          avatarUrl: dbCard.avatarUrl || '',
-          themeId: dbCard.themeId,
-          themeConfig: dbCard.themeConfig || {},
-          socialLinks: dbCard.socialLinks || [],
-          isPublished: dbCard.isPublished,
-          publishedUrl: dbCard.publishedUrl || undefined,
-          customSlug: dbCard.customSlug || undefined,
-          viewsCount: dbCard.viewsCount || 0,
-          subscriptionStatus: 'free',
-          planType: 'free'
-        };
-
-        setCards(prev => [...(prev || []).filter(c => c.id !== card.id), card]);
-        setSelectedCardId(card.id); // Use the actual card ID, not the slug
-        setCurrentView('live');
-        setIsExternalCard(true); // Mark as external card
-
-        // 🏷️ Update meta tags for modern social sharing
-        const baseUrl = window.location.origin;
-        const metaTags = generateCardMetaTags(card, baseUrl);
-        updateMetaTags(metaTags);
-        console.log('🏷️ Meta tags updated for card sharing:', card.firstName, card.lastName);
-      } else {
-        console.error('Card not found:', cardIdOrSlug);
-        // Redirect to 404 or landing page
-        setCurrentView('landing');
-      }
-    } catch (error) {
-      console.error('Error fetching card:', error);
-      setCurrentView('landing');
-    }
-  };
-
-  // Function to fetch card by slug from backend
-  const fetchCardBySlug = async (slug: string) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/by-slug/${slug}`);
-      if (response.ok) {
-        const dbCard = await response.json();
-
-        // Transform backend data to frontend format
-        const card: DigitalCard = {
-          id: dbCard.id,
-          userId: dbCard.userId,
-          firstName: dbCard.firstName,
-          lastName: dbCard.lastName,
-          title: dbCard.title,
-          company: dbCard.company || '',
-          bio: dbCard.bio || '',
-          email: dbCard.email || '',
-          phone: dbCard.phone || '',
-          location: dbCard.location || '',
-          avatarUrl: dbCard.avatarUrl || '',
-          themeId: dbCard.themeId,
-          themeConfig: dbCard.themeConfig || {},
-          socialLinks: dbCard.socialLinks || [],
-          isPublished: dbCard.isPublished,
-          publishedUrl: dbCard.publishedUrl || undefined,
-          customSlug: dbCard.customSlug || undefined,
-          viewsCount: dbCard.viewsCount || 0,
-          subscriptionStatus: 'free',
-          planType: 'free'
-        };
-
-        setCards(prev => [...(prev || []).filter(c => c.id !== card.id), card]);
+    const card = await fetchCardBySlugOrId(cardIdOrSlug);
+    if (card) {
+      // Only update if not already in list (avoid dupes/overwrite)
+      setCards(prev => {
+        if (prev.find(c => c.id === card.id)) return prev;
+        return [...prev, card];
+      });
+      // Auto-select
+      if (currentView === 'live' || currentView === 'editor') {
         setSelectedCardId(card.id);
-        setCurrentView('live');
-        setIsExternalCard(true); // Mark as external card
+      }
 
-        // 🏷️ Update meta tags for modern social sharing
+      // Handle external view for live cards
+      if (currentView === 'live') {
+        setIsExternalCard(true);
+
+        // Update meta tags
         const baseUrl = window.location.origin;
         const metaTags = generateCardMetaTags(card, baseUrl);
         updateMetaTags(metaTags);
-        console.log('🏷️ Meta tags updated for card sharing (by slug):', card.firstName, card.lastName);
-      } else {
-        console.error('Card not found by slug:', slug);
-        // Redirect to 404 or landing page
+      }
+    } else {
+      // Not found
+      if (currentView === 'live') {
         setCurrentView('landing');
       }
-    } catch (error) {
-      console.error('Error fetching card by slug:', error);
-      setCurrentView('landing');
     }
   };
+
+  // Duplicate fetchCardBySlug removed - functionality merged into fetchCardFromBackend and hook
+
 
   // 🚀 ROBUST DATA MANAGEMENT: Reusable fetch function with loading state
   const refetchCardsFromBackend = async () => {
@@ -255,7 +190,7 @@ function AppContent() {
     }
 
     // Enhanced URL Routing System
-    const checkRouting = () => {
+    const checkRouting = async () => {
       const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const pathSegments = path.split('/').filter(Boolean);
@@ -316,8 +251,8 @@ function AppContent() {
           cardId = cardByUsername.id;
         } else {
           // If not found locally, fetch from backend by slug
-          fetchCardBySlug(username);
-          return; // Exit early since fetchCardBySlug handles the rest
+          await fetchCardFromBackend(username);
+          return; // Exit early since fetchCardFromBackend handles the rest
         }
       }
       // Fallback to legacy query param routing
@@ -346,8 +281,9 @@ function AppContent() {
             window.history.replaceState({}, '', newUrl);
           }
         } else {
-          // If not found in localStorage, try to fetch from backend
-          fetchCardFromBackend(cardId);
+          // 🚀 ROBUST FIX: Force complete data refresh from backend
+          await fetchCards();
+          setSelectedCardId(cardId);
         }
       }
     };
@@ -382,14 +318,8 @@ function AppContent() {
     }
   }, [isAuthenticated, authLoading, currentView, isExternalCard]);
 
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
+  // Cleanup for hook-managed resources handles itself
+
 
   // --- AUTH HANDLERS ---
   const handleLoginSuccess = (user: any) => {
@@ -422,27 +352,20 @@ function AppContent() {
   };
 
   // --- NAVIGATION HANDLERS ---
-  const handleCreateCard = () => {
-    const newCard = createNewCardTemplate();
+  const handleCreateCard = async () => {
+    // 1. Create persistent card via hook
+    const newCard = await createCard();
 
-    // Auto-fill user data if available
-    if (isAuthenticated && user) {
-      newCard.firstName = user.user_metadata?.first_name || user.firstName || '';
-      newCard.lastName = user.user_metadata?.last_name || user.lastName || '';
-      // If we have an email, we can use it (optional)
-      newCard.email = user.email || '';
-    }
+    if (newCard) {
+      // 2. Select it and switch view
+      setSelectedCardId(newCard.id);
+      setCurrentView('editor');
 
-    // NO guardar en storage todavía - solo crear plantilla temporal
-    setCards(prev => [...prev, { ...newCard, isTemporary: true }]);
-    setSelectedCardId(newCard.id);
-    setCurrentView('editor');
-
-    // NEW: Update URL to user-specific editor
-    if (isAuthenticated && user) {
-      const userEditorUrl = getUserEditorUrl(user);
-      window.history.pushState({}, '', userEditorUrl);
-      console.log('🔀 Navigating to user editor:', userEditorUrl);
+      // 3. Update URL
+      if (isAuthenticated && user) {
+        const userEditorUrl = getUserEditorUrl(user);
+        window.history.pushState({}, '', userEditorUrl);
+      }
     }
   };
 
@@ -459,60 +382,39 @@ function AppContent() {
   };
 
   const handleDeleteCard = async (id: string) => {
-    if (!id || isDeleting || deletingCardId) return; // Prevent double deletion
+    if (!id || isDeleting || deletingCardId) return;
 
     setIsDeleting(true);
     setDeletingCardId(id);
-    setError(null); // Clear any previous errors
+    setError(null);
 
     try {
       console.log('🗑️ Starting card deletion:', id);
+      const success = await deleteCard(id);
 
-      // Delete from backend first
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-        }
-      });
-
-      if (!response.ok) {
-        const errorMessage = `Error eliminando tarjeta: ${response.status} ${response.statusText}`;
-        setError(errorMessage);
-        console.error('Failed to delete card from backend:', errorMessage);
-        return;
+      if (!success) {
+        throw new Error('Deletion failed');
       }
 
-      console.log('✅ Card deleted from backend successfully');
-
-      // 🚀 ROBUST FIX: Force complete data refresh from backend
-      await refetchCardsFromBackend();
+      console.log('✅ Card deleted successfully');
 
       // Reset view if deleted card was selected
       if (selectedCardId === id) {
         setSelectedCardId(null);
         setCurrentView('dashboard');
 
-        // Update URL to user-specific dashboard after deletion
         if (isAuthenticated && user) {
           const userDashboardUrl = getUserDashboardUrl(user);
           window.history.pushState({}, '', userDashboardUrl);
-          console.log('🔀 Redirecting to user dashboard after deletion:', userDashboardUrl);
         }
       }
-
-      console.log('✅ Card deletion completed with fresh data');
     } catch (error) {
-      const errorMessage = 'Error de conexión al eliminar la tarjeta. Por favor, intenta de nuevo.';
-      setError(errorMessage);
+      setError('Error eliminando tarjeta.');
       console.error('❌ Error deleting card:', error);
     } finally {
       setIsDeleting(false);
       setDeletingCardId(null);
-      // Auto-clear error after 5 seconds
-      if (error) {
-        setTimeout(() => setError(null), 5000);
-      }
+      if (error) setTimeout(() => setError(null), 5000);
     }
   };
 
@@ -594,146 +496,9 @@ function AppContent() {
   // --- EDITOR HANDLERS ---
 
   // Immediate save to backend (no debounce) - for manual saves and publishing
-  const saveCardToBackend = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
-    // Saving card to backend
-    try {
-      // Determine if we should create (POST) or update (PUT)
-      // Logic Fix: Post if marked New, Temporary, or not found in our list
-      const existingCard = cards.find(c => c.id === cardToSave.id);
-      const isNewCard = cardToSave.isNew || cardToSave.isTemporary || !existingCard || (existingCard.isTemporary);
-
-      if (!isNewCard) {
-        // Update existing card (PUT)
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/cards/${cardToSave.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(cardToSave)
-        });
-
-        if (response.ok) {
-          const updatedCard = await response.json();
-          console.log('✅ BACKEND UPDATE SUCCESS:', updatedCard.id);
-          // Return card marked as persistent
-          return { ...updatedCard, isTemporary: false, isNew: false };
-        } else {
-          // If PUT fails (e.g. 404), try POST to recover
-          console.warn('⚠️ Update failed, attempting creation...');
-          const postResponse = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...cardToSave, isNew: false })
-          });
-
-          if (postResponse.ok) {
-            const savedCard = await postResponse.json();
-            return { ...savedCard, isTemporary: false, isNew: false };
-          }
-        }
-      } else {
-        // Create new card (POST)
-        console.log('✨ CREATING new card via POST:', cardToSave.id);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/cards`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...cardToSave, isNew: false })
-        });
-
-        if (response.ok) {
-          const savedCard = await response.json();
-          console.log('✅ BACKEND CREATE SUCCESS:', savedCard.id);
-          // Return card marked as persistent
-          return { ...savedCard, isTemporary: false, isNew: false };
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Create failed:', response.status, errorText);
-        }
-      }
-
-      // If backend save failed but didn't crash
-      saveCardToStorage(cardToSave);
-      return cardToSave;
-
-    } catch (error) {
-      console.error('❌ BACKEND SAVE ERROR:', error);
-      saveCardToStorage(cardToSave); // Fallback
-      return cardToSave;
-    }
-  };
-
-
-
-  // Debounced auto-save function
-  const debouncedSave = useCallback(async (cardToSave: DigitalCard) => {
-    // Clear any pending timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Store the pending card
-    pendingCardRef.current = cardToSave;
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      const cardToSaveNow = pendingCardRef.current;
-      if (!cardToSaveNow) return;
-
-      setIsSaving(true);
-      // Executing debounced save
-
-      try {
-        const savedCard = await saveCardToBackend(cardToSaveNow);
-        setCards(prev => prev.map(c => c.id === savedCard.id ? savedCard : c));
-        setLastSaveTime(new Date());
-        console.log('✅ AUTO-SAVE SUCCESS:', savedCard.id);
-      } catch (error) {
-        console.error('❌ AUTO-SAVE ERROR:', error);
-      } finally {
-        setIsSaving(false);
-        pendingCardRef.current = null;
-      }
-    }, 800); // 800ms debounce delay
-  }, [cards]);
-
-  // Force save immediately (for publishing, manual save)
-  const forceSave = async (cardToSave: DigitalCard): Promise<DigitalCard> => {
-    // Clear any pending debounced save
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-
-    setIsSaving(true);
-    // Force saving card immediately
-
-    try {
-      const savedCard = await saveCardToBackend(cardToSave);
-      setCards(prev => prev.map(c => c.id === savedCard.id ? savedCard : c));
-      setLastSaveTime(new Date());
-      return savedCard;
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Smart save handler - uses debouncing for auto-saves, immediate for manual saves
+  // --- REMOVED OLD SAVE LOGIC (Replaced by hook) ---
   const handleSaveCard = async (cardToSave: DigitalCard, immediate = false): Promise<DigitalCard> => {
-    // Saving card with appropriate timing
-
-    // Update local state immediately for responsive UI
-    setCards(prev => prev.map(c => c.id === cardToSave.id ? cardToSave : c));
-
-    if (immediate) {
-      // Immediate save (for publishing, manual save buttons)
-      return await forceSave(cardToSave);
-    } else {
-      // Debounced auto-save (for typing)
-      debouncedSave(cardToSave);
-      return cardToSave; // Return immediately, save happens in background
-    }
+    return await saveCard(cardToSave, immediate);
   };
 
   const handlePublish = async () => {
@@ -815,10 +580,14 @@ function AppContent() {
   if (currentView === 'live') {
     return (
       <div className="min-h-screen bg-black">
-        <CardPreview card={activeCard} mode="live" language={language} />
+        {activeCard ? (
+          <CardPreview card={activeCard} mode="live" language={language} />
+        ) : (
+          <div className="text-white">Loading...</div>
+        )}
 
         {/* Show edit buttons only for card owners */}
-        {isCardOwner(activeCard) && (
+        {activeCard && isCardOwner(activeCard) && (
           <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
             <button onClick={() => setCurrentView('editor')} className="flex items-center gap-2 px-5 py-3 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-full shadow-2xl text-white font-medium hover:bg-slate-800 transition-all">
               <Edit3 size={18} />
@@ -831,7 +600,7 @@ function AppContent() {
         )}
 
         {/* Show branding and CTA for external visitors */}
-        {!isCardOwner(activeCard) && (
+        {activeCard && !isCardOwner(activeCard) && (
           <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3">
             {/* Branding */}
             <div className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-slate-700/50 rounded-full text-slate-300 text-sm">

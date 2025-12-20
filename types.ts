@@ -55,6 +55,9 @@ export interface DigitalCard {
   subscriptionStatus?: SubscriptionStatus;
   trialEndsAt?: number; // Timestamp
   planType?: 'free' | 'pro';
+
+  // Frontend State Flags
+  isNew?: boolean;
 }
 
 export interface AnalyticsData {
