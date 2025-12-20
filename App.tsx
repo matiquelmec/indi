@@ -281,8 +281,8 @@ function AppContent() {
             window.history.replaceState({}, '', newUrl);
           }
         } else {
-          // 🚀 ROBUST FIX: Force complete data refresh from backend
-          await fetchCards();
+          // 🚀 ROBUST FIX: Attempt to fetch single card from public access (works for both ID and Slug)
+          await fetchCardFromBackend(cardId);
           setSelectedCardId(cardId);
         }
       }
