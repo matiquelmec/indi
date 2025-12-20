@@ -28,15 +28,15 @@ router.get('/:id', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
     const { id } = req.params;
     const card = cards.find(c => c.id === id);
-    
+
     if (!card) {
       return res.status(404).json({ error: 'Card not found' });
     }
@@ -55,15 +55,15 @@ router.get('/slug/:slug', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
     const { slug } = req.params;
     const card = cards.find(c => c.slug === slug && c.isPublished);
-    
+
     if (!card) {
       return res.status(404).json({ error: 'Card not found' });
     }
@@ -96,9 +96,9 @@ router.post('/', authMiddleware, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
@@ -115,7 +115,8 @@ router.post('/', authMiddleware, [
       avatarUrl = '',
       themeId = 'emerald',
       themeConfig = {},
-      socialLinks = []
+      socialLinks = [],
+      isPublished = false // Allow frontend to set this
     } = req.body;
 
     // Generate unique slug using proper URL normalization
@@ -138,7 +139,7 @@ router.post('/', authMiddleware, [
       themeId,
       themeConfig,
       socialLinks,
-      isPublished: false,
+      isPublished, // Use the extracted value
       publishedUrl: null,
       viewsCount: 0,
       contactsSaved: 0,
@@ -179,15 +180,15 @@ router.put('/:id', authMiddleware, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
     const { id } = req.params;
     const userId = (req as any).user.userId;
-    
+
     const cardIndex = cards.findIndex(c => c.id === id && c.userId === userId);
     if (cardIndex === -1) {
       return res.status(404).json({ error: 'Card not found' });
@@ -219,15 +220,15 @@ router.delete('/:id', authMiddleware, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
     const { id } = req.params;
     const userId = (req as any).user.userId;
-    
+
     const cardIndex = cards.findIndex(c => c.id === id && c.userId === userId);
     if (cardIndex === -1) {
       return res.status(404).json({ error: 'Card not found' });
@@ -250,15 +251,15 @@ router.post('/:id/publish', authMiddleware, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
     const { id } = req.params;
     const userId = (req as any).user.userId;
-    
+
     const cardIndex = cards.findIndex(c => c.id === id && c.userId === userId);
     if (cardIndex === -1) {
       return res.status(404).json({ error: 'Card not found' });
@@ -292,15 +293,15 @@ router.post('/:id/unpublish', authMiddleware, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: errors.array() 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
     const { id } = req.params;
     const userId = (req as any).user.userId;
-    
+
     const cardIndex = cards.findIndex(c => c.id === id && c.userId === userId);
     if (cardIndex === -1) {
       return res.status(404).json({ error: 'Card not found' });
