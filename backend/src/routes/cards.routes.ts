@@ -8,6 +8,26 @@ import { toApiCard, toDbCard } from '../utils/formatters';
 
 const router = express.Router();
 
+// DEBUG ENDPOINT: List all slugs (for diagnostics only)
+router.get('/debug/slugs', async (req: Request, res: Response) => {
+  try {
+    const { data: slugs, error } = await database.getClient()
+      .from('cards')
+      .select('id, custom_slug, is_published, first_name, last_name')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    return res.json({
+      count: slugs?.length,
+      slugs: slugs
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Debug error', details: error });
+  }
+});
+
 // Get user's cards
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -253,24 +273,6 @@ router.delete('/:id', authMiddleware, [
   }
 });
 
-// DEBUG ENDPOINT: List all slugs (for diagnostics only)
-router.get('/debug/slugs', async (req: Request, res: Response) => {
-  try {
-    const { data: slugs, error } = await database.getClient()
-      .from('cards')
-      .select('id, custom_slug, is_published, first_name, last_name')
-      .order('created_at', { ascending: false })
-      .limit(20);
 
-    if (error) throw error;
-
-    return res.json({
-      count: slugs?.length,
-      slugs: slugs
-    });
-  } catch (error) {
-    return res.status(500).json({ error: 'Debug error', details: error });
-  }
-});
 
 export default router;
