@@ -1,9 +1,11 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import app from '../src/server';
-import { connectDatabase } from '../src/config/database';
+import { database } from '../src/config/database';
 
 // Initialize DB connection for serverless environment
-// Note: Supabase client is stateless but we might need this for sanity checks
-connectDatabase().catch(console.error);
+// The singleton constructor handles init, but we test connection here
+database.testConnection().then(success => {
+  if (!success) console.error('❌ DB Connection failed in Vercel function');
+}).catch(console.error);
 
 export default app;

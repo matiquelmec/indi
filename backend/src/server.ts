@@ -10,7 +10,7 @@ import authRoutes from './routes/auth.routes.js';
 import cardsRoutes from './routes/cards.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import paymentsRoutes from './routes/payments.routes.js';
-import { connectDatabase } from './config/database.js';
+import { database } from './config/database.js';
 import { initRedis } from './config/redis.js';
 
 // Load environment variables
@@ -112,8 +112,8 @@ app.use(errorHandler);
 // Start server
 const startServer = async () => {
   try {
-    // Connect to PostgreSQL
-    await connectDatabase();
+    // Connect to PostgreSQL (Supabase)
+    await database.testConnection();
     logger.info('✅ Database connected successfully');
 
     // Connect to Redis
