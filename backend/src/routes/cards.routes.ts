@@ -64,7 +64,7 @@ router.get('/slug/:slug', [
       });
     }
 
-    const { slug } = req.params;
+    const slug = req.params.slug.toLowerCase();
     console.log(`🔍 [GET /slug/${slug}] Request received`);
 
     // Direct query for public slug
@@ -217,6 +217,11 @@ router.put('/:id', authMiddleware, [
     if (existing.user_id !== userId) return res.status(403).json({ error: 'Unauthorized' });
 
     // Update
+    // Enforce lowercase if updating customSlug
+    if (req.body.customSlug) {
+      req.body.customSlug = req.body.customSlug.toLowerCase();
+    }
+
     const updates = toDbCard(req.body);
     const updatedCard = await database.updateCard(id, updates);
 
