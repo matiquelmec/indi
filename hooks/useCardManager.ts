@@ -81,7 +81,8 @@ export function useCardManager(): UseCardManagerReturn {
                 });
 
                 if (response.ok) {
-                    const newCard = await response.json();
+                    const data = await response.json();
+                    const newCard = data.card || data; // Handle wrapped response
                     console.log('✅ Card created on backend:', newCard.id);
                     setCards(prev => [...prev, newCard]);
                     setLastSaveTime(new Date());
@@ -125,7 +126,8 @@ export function useCardManager(): UseCardManagerReturn {
                 });
 
                 if (response.ok) {
-                    const saved = await response.json();
+                    const data = await response.json();
+                    const saved = data.card || data; // Handle wrapped response
                     console.log(`✅ Saved (${method}) success:`, saved.id);
                     return { ...saved, isTemporary: false, isNew: false };
                 }
