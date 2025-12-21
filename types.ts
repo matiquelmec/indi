@@ -49,6 +49,7 @@ export interface DigitalCard {
   isPublished?: boolean;
   publishedUrl?: string;
   customSlug?: string; // URL slug for /u/firstname-lastname routing
+  slug?: string; // Alias for customSlug for backward compatibility
   isTemporary?: boolean; // True si es una plantilla temporal no guardada
 
   // Business Logic Fields

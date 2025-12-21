@@ -65,12 +65,12 @@ router.get('/slug/:slug', [
     }
 
     const { slug } = req.params;
+    console.log(`🔍 [GET /slug/${slug}] Request received`);
 
     // Direct query for public slug
     const { data: card, error } = await database.getClient()
       .from('cards')
       .select('*')
-      .eq('slug', slug) // Assuming column is 'slug' or 'custom_slug'? Schema says: published_url, custom_slug. 
       // Wait. The schema has 'custom_slug' and 'published_url'. It does NOT have just 'slug'.
       // App.tsx sends 'slug' in newCard, but schema calls it 'custom_slug'?
       // Let's check the POST handler I wrote previously. It used 'slug'.

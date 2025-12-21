@@ -21,6 +21,7 @@ export const toApiCard = (dbCard: any) => {
         isPublished: dbCard.is_published,
         publishedUrl: dbCard.published_url,
         customSlug: dbCard.custom_slug,
+        slug: dbCard.custom_slug, // Alias
         viewsCount: dbCard.views_count,
         contactsSaved: dbCard.contacts_saved,
         sharesCount: dbCard.shares_count,
