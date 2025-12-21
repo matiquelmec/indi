@@ -71,36 +71,25 @@ router.get('/slug/:slug', [
     const { data: card, error } = await database.getClient()
       .from('cards')
       .select('*')
-      // Wait. The schema has 'custom_slug' and 'published_url'. It does NOT have just 'slug'.
-      // App.tsx sends 'slug' in newCard, but schema calls it 'custom_slug'?
-      // Let's check the POST handler I wrote previously. It used 'slug'.
-      // Schema in Step 313: custom_slug character varying UNIQUE
-      // AND published_url character varying UNIQUE
-      // But standard 'slug' column is missing in correct schema? 
-      // User Schema:
-      // cards (
-      //   ...
-      //   custom_slug character varying UNIQUE,
-      //   published_url character varying UNIQUE,
-      //   ...
-      // )
-      // But wait, the frontend likely expects a 'slug' property.
-      // And in my previous memory/mock, I used `slug`.
-      // The schema provided by user in Step 313 DOES NOT HAVE a column named simply "slug". 
-      // It has `custom_slug`.
-      // I will assume `custom_slug` acts as the main slug.
-      // Correction: accessing via `.eq('custom_slug', slug)`.
-      // Also need to check `.or('published_url.eq.' + slug)` maybe?
-      // Let's stick to `custom_slug` as the primary identifier for now.
       .eq('custom_slug', slug)
-      .eq('is_published', true)
-      .single();
+      .maybeSingle();
 
-    if (error || !card) {
-      // Try checking by ID incase the "slug" passed was actually an UUID?
-      // No, the frontend handles that distinction.
+    if (error) {
+      console.error(`❌ [GET /slug/${slug}] DB Error:`, error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!card) {
+      console.warn(`⚠️ [GET /slug/${slug}] Card not found in DB`);
       return res.status(404).json({ error: 'Card not found' });
     }
+
+    if (!card.is_published) {
+      console.warn(`⚠️ [GET /slug/${slug}] Card found but NOT published (ID: ${card.id})`);
+      return res.status(404).json({ error: 'Card not found or not published' });
+    }
+
+    console.log(`✅ [GET /slug/${slug}] Success -> ID: ${card.id}`);
 
     // Increment view count (fire and forget)
     database.getClient().rpc('increment_page_view', { page_id: card.id })
