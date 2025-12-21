@@ -6,12 +6,12 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
-import authRoutes from './routes/auth.routes.js';
-import cardsRoutes from './routes/cards.routes.js';
-import analyticsRoutes from './routes/analytics.routes.js';
-import paymentsRoutes from './routes/payments.routes.js';
-import { database } from './config/database.js';
-import { initRedis } from './config/redis.js';
+import authRoutes from './routes/auth.routes';
+import cardsRoutes from './routes/cards.routes';
+import analyticsRoutes from './routes/analytics.routes';
+import paymentsRoutes from './routes/payments.routes';
+import { database } from './config/database';
+import { initRedis } from './config/redis';
 
 // Load environment variables
 dotenv.config();
