@@ -176,14 +176,14 @@ router.post('/', authMiddleware, [
 
     const newCard = await database.createCard(dbPayload);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Card created successfully',
       card: toApiCard(newCard)
     });
 
   } catch (error) {
     console.error('Create card error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -214,14 +214,14 @@ router.put('/:id', authMiddleware, [
     const updates = toDbCard(req.body);
     const updatedCard = await database.updateCard(id, updates);
 
-    res.json({
+    return res.json({
       message: 'Card updated successfully',
       card: toApiCard(updatedCard)
     });
 
   } catch (error) {
     console.error('Update card error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -245,11 +245,31 @@ router.delete('/:id', authMiddleware, [
 
     await database.deleteCard(id);
 
-    res.json({ message: 'Card deleted successfully' });
+    return res.json({ message: 'Card deleted successfully' });
 
   } catch (error) {
     console.error('Delete card error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DEBUG ENDPOINT: List all slugs (for diagnostics only)
+router.get('/debug/slugs', async (req: Request, res: Response) => {
+  try {
+    const { data: slugs, error } = await database.getClient()
+      .from('cards')
+      .select('id, custom_slug, is_published, first_name, last_name')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    return res.json({
+      count: slugs?.length,
+      slugs: slugs
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Debug error', details: error });
   }
 });
 
