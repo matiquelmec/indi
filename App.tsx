@@ -879,7 +879,7 @@ function AppContent() {
         } else if (publishedCard?.id) {
           window.open(`/card/${publishedCard.id}`, '_blank');
         }
-      }} language={language} card={publishedCard} />}
+      }} language={language} card={publishedCard || undefined} />}
       {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} onSuccess={handleUpgradeSuccess} language={language} />}
 
       {/* Error Notification */}
